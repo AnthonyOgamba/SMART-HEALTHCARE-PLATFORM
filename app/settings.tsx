@@ -43,12 +43,18 @@ export default function SettingsScreen() {
   return (
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            onPress={() => router.back()}
+            hitSlop={8}>
+            <MaterialIcons name="arrow-back" size={22} color={theme.iconDefault} />
+          </Pressable>
         <ThemedText type="title" style={styles.headerTitle}>
           Settings
         </ThemedText>
-        <Pressable accessibilityRole="button" accessibilityLabel="Notifications" hitSlop={8}>
-          <MaterialIcons name="notifications-none" size={22} color={theme.iconDefault} />
-        </Pressable>
+        </View>
       </View>
 
       <SurfaceCard>
@@ -144,6 +150,11 @@ const makeStyles = (theme: ThemePalette) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
     },
     headerTitle: {
       fontSize: 20,
