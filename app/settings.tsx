@@ -1,40 +1,40 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { Button } from '@/components/ui/button';
-import { IconBadge } from '@/components/ui/icon-badge';
-import { NavRow } from '@/components/ui/nav-row';
-import { ScreenContainer } from '@/components/ui/screen-states';
-import { SurfaceCard } from '@/components/ui/surface-card';
-import { ToggleRow } from '@/components/ui/toggle-row';
-import { Spacing } from '@/constants/theme';
-import { usePalette, type ThemePalette } from '@/hooks/use-palette';
+import { ScreenContainer } from "@/components/ui/screen-states";
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const theme = usePalette();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const [appointmentReminders, setAppointmentReminders] = useState(true);
+
   const [medicationReminders, setMedicationReminders] = useState(true);
-  const [accessibility, setAccessibility] = useState(false);
+
+  const [criticalAlerts, setCriticalAlerts] = useState(true);
+
+  const [aiInsights, setAiInsights] = useState(true);
+
+  const [biometricLock, setBiometricLock] = useState(false);
+
+  const handleChangePassword = () => {
+    Alert.alert(
+      "Change Password",
+      "Password changes will be connected to the authentication service.",
+    );
+  };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and all associated health data. This action cannot be undone.',
+      "Delete Account",
+      "This will permanently remove your account and associated health information.",
       [
-        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            // TODO: Member 1 owns account/auth — call the real delete endpoint,
-            // e.g. await api.delete('/account'), then clear the token and route out.
-            router.replace('/');
-          },
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
         },
       ],
     );
@@ -42,138 +42,317 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer contentContainerStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerLeft}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            onPress={() => router.back()}
-            hitSlop={8}>
-            <MaterialIcons name="arrow-back" size={22} color={theme.iconDefault} />
-          </Pressable>
-        <ThemedText type="title" style={styles.headerTitle}>
-          Settings
-        </ThemedText>
-        </View>
+      <View style={styles.header}>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={24} color="#005EA4" />
+        </Pressable>
+
+        <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
-      <SurfaceCard>
-        <View style={styles.cardHeader}>
-          <IconBadge icon="notifications" color={theme.blueIcon} backgroundColor={theme.blueTint} size={30} />
-          <ThemedText type="defaultSemiBold">Notification Preferences</ThemedText>
-        </View>
-        <ToggleRow
-          icon="event-available"
-          iconColor={theme.blueIcon}
-          iconBackground={theme.blueTint}
-          title="Appointment Reminders"
-          description="Get notified about upcoming visits"
-          value={appointmentReminders}
-          onValueChange={setAppointmentReminders}
-        />
+      <Text style={styles.sectionLabel}>NOTIFICATIONS</Text>
+
+      <View style={styles.card}>
         <ToggleRow
           icon="medication"
-          iconColor={theme.blueIcon}
-          iconBackground={theme.blueTint}
           title="Medication Reminders"
-          description="Don't miss your daily dosage"
+          description="Receive reminders when it is time to take your medication."
           value={medicationReminders}
           onValueChange={setMedicationReminders}
         />
-      </SurfaceCard>
 
-      <SurfaceCard>
-        <View style={styles.cardHeader}>
-          <IconBadge icon="settings" color={theme.amberIcon} backgroundColor={theme.amberTint} size={30} />
-          <ThemedText type="defaultSemiBold">Appearance</ThemedText>
-        </View>
-        {/*
-          Dark mode now follows the device's system setting automatically
-          (see hooks/use-palette.ts). This toggle is a placeholder for a
-          future manual override — wiring it up needs a small ColorScheme
-          context so the choice can persist and override the system value.
-        */}
-        <ToggleRow
-          icon="dark-mode"
-          iconColor={theme.iconDefault}
-          iconBackground={theme.grayTint}
-          title="Dark Mode"
-          description="Follows your device setting"
-          value={false}
-          onValueChange={() => {}}
-        />
-        <ToggleRow
-          icon="accessibility-new"
-          iconColor={theme.iconDefault}
-          iconBackground={theme.grayTint}
-          title="Accessibility Settings"
-          description="Larger text and high contrast"
-          value={accessibility}
-          onValueChange={setAccessibility}
-        />
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <NavRow
-          icon="lock"
-          iconColor={theme.greenIcon}
-          iconBackground={theme.greenTint}
-          title="Privacy Settings"
-          subtitle="Manage data sharing & visibility"
-          onPress={() => router.push('/privacy-policy')}
-        />
         <View style={styles.divider} />
-        <NavRow
-          icon="shield"
-          iconColor={theme.iconDefault}
-          iconBackground={theme.grayTint}
-          title="Change Password"
-          subtitle="Update your account credentials"
+
+        <ToggleRow
+          icon="notifications-active"
+          title="Critical Health Alerts"
+          description="Receive important alerts related to health and safety checks."
+          value={criticalAlerts}
+          onValueChange={setCriticalAlerts}
         />
-      </SurfaceCard>
 
-      <Button label="Delete Account" variant="danger" icon="delete-outline" onPress={handleDeleteAccount} />
+        <View style={styles.divider} />
 
-      <ThemedText style={styles.version}>Version 2.4.1 (Build 1092)</ThemedText>
+        <ToggleRow
+          icon="auto-awesome"
+          title="AI Health Insights"
+          description="Receive AI-generated wellness summaries and health pattern insights."
+          value={aiInsights}
+          onValueChange={setAiInsights}
+        />
+      </View>
+
+      <Text style={styles.sectionLabel}>SECURITY</Text>
+
+      <View style={styles.card}>
+        <ToggleRow
+          icon="fingerprint"
+          title="Biometric App Lock"
+          description="Use supported device authentication to protect access to health information."
+          value={biometricLock}
+          onValueChange={setBiometricLock}
+        />
+
+        <View style={styles.divider} />
+
+        <NavigationRow
+          icon="security"
+          title="Security Center"
+          description="Review account, health-data, privacy, and AI safety controls."
+          onPress={() => router.push("/security-center" as never)}
+        />
+
+        <View style={styles.divider} />
+
+        <NavigationRow
+          icon="lock"
+          title="Change Password"
+          description="Update your account credentials."
+          onPress={handleChangePassword}
+        />
+      </View>
+
+      <Text style={styles.sectionLabel}>PRIVACY & DATA</Text>
+
+      <View style={styles.card}>
+        <NavigationRow
+          icon="fact-check"
+          title="Consent Management"
+          description="Control AI, health-data, wearable, and notification permissions."
+          onPress={() => router.push("/consent-management" as never)}
+        />
+
+        <View style={styles.divider} />
+
+        <NavigationRow
+          icon="privacy-tip"
+          title="Privacy Policy"
+          description="Review how your information is collected, used, and protected."
+          onPress={() => router.push("/privacy-policy" as never)}
+        />
+      </View>
+
+      <View style={styles.securityNotice}>
+        <MaterialIcons name="shield" size={22} color="#005EA4" />
+
+        <View style={styles.noticeContent}>
+          <Text style={styles.noticeTitle}>Health Information Security</Text>
+
+          <Text style={styles.noticeText}>
+            Health information is sensitive. The deployed application should
+            enforce authentication, authorization, secure database access,
+            encryption, validation, and protected API communication.
+          </Text>
+        </View>
+      </View>
+
+      <Pressable style={styles.deleteButton} onPress={handleDeleteAccount}>
+        <MaterialIcons name="delete-outline" size={20} color="#BA1A1A" />
+
+        <Text style={styles.deleteText}>Delete Account</Text>
+      </Pressable>
+
+      <Text style={styles.version}>HealthNexus 1.0</Text>
     </ScreenContainer>
   );
 }
 
-const makeStyles = (theme: ThemePalette) =>
-  StyleSheet.create({
-    content: {
-      padding: Spacing.md,
-      gap: Spacing.md,
-      backgroundColor: theme.screenBg,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-    },
-    headerTitle: {
-      fontSize: 20,
-      color: theme.accent,
-    },
-    cardHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-      marginBottom: Spacing.xs,
-    },
-    divider: {
-      height: 1,
-      backgroundColor: theme.cardBorder,
-    },
-    version: {
-      textAlign: 'center',
-      fontSize: 12,
-      color: theme.textMuted,
-      marginTop: Spacing.sm,
-    },
-  });
+function ToggleRow({
+  icon,
+  title,
+  description,
+  value,
+  onValueChange,
+}: {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  title: string;
+  description: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+}) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.icon}>
+        <MaterialIcons name={icon} size={22} color="#005EA4" />
+      </View>
+
+      <View style={styles.rowContent}>
+        <Text style={styles.rowTitle}>{title}</Text>
+
+        <Text style={styles.rowDescription}>{description}</Text>
+      </View>
+
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{
+          false: "#D7DBDF",
+          true: "#005EA4",
+        }}
+        thumbColor="#FFFFFF"
+      />
+    </View>
+  );
+}
+
+function NavigationRow({
+  icon,
+  title,
+  description,
+  onPress,
+}: {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  title: string;
+  description: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={styles.row} onPress={onPress}>
+      <View style={styles.icon}>
+        <MaterialIcons name={icon} size={22} color="#005EA4" />
+      </View>
+
+      <View style={styles.rowContent}>
+        <Text style={styles.rowTitle}>{title}</Text>
+
+        <Text style={styles.rowDescription}>{description}</Text>
+      </View>
+
+      <MaterialIcons name="chevron-right" size={24} color="#858B94" />
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: {
+    padding: 18,
+    paddingBottom: 110,
+    gap: 14,
+    backgroundColor: "#F7F9FB",
+  },
+
+  header: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  backButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+  },
+
+  headerTitle: {
+    color: "#005EA4",
+    fontSize: 24,
+    fontWeight: "700",
+  },
+
+  sectionLabel: {
+    color: "#707783",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginTop: 7,
+  },
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E1E5E9",
+    borderRadius: 16,
+    paddingHorizontal: 15,
+  },
+
+  row: {
+    minHeight: 82,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 13,
+  },
+
+  icon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "#E4F0FA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  rowContent: {
+    flex: 1,
+  },
+
+  rowTitle: {
+    color: "#191C1E",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  rowDescription: {
+    color: "#707783",
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 3,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#EDF0F2",
+  },
+
+  securityNotice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 11,
+    backgroundColor: "#EEF6FB",
+    borderWidth: 1,
+    borderColor: "#D4E5F0",
+    borderRadius: 14,
+    padding: 15,
+  },
+
+  noticeContent: {
+    flex: 1,
+  },
+
+  noticeTitle: {
+    color: "#005EA4",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  noticeText: {
+    color: "#59616D",
+    fontSize: 10,
+    lineHeight: 16,
+    marginTop: 3,
+  },
+
+  deleteButton: {
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#F0BBB5",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  deleteText: {
+    color: "#BA1A1A",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  version: {
+    color: "#858B94",
+    fontSize: 11,
+    textAlign: "center",
+  },
+});
