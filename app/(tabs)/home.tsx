@@ -115,17 +115,6 @@ export default function DashboardScreen() {
           ))}
         </View>
 
-        <Pressable
-          style={styles.analyticsButton}
-          accessibilityRole="button"
-          onPress={() => router.push("/analytics" as never)}
-        >
-          <ThemedText style={styles.analyticsLabel}>
-            Detailed Analytics
-          </ThemedText>
-
-          <MaterialIcons name="arrow-forward" size={16} color={theme.white} />
-        </Pressable>
       </SurfaceCard>
 
       {/* Today's Medication */}
@@ -255,23 +244,6 @@ export default function DashboardScreen() {
             </ThemedText>
           </Pressable>
 
-          <Pressable
-            style={styles.quickActionCard}
-            accessibilityRole="button"
-            onPress={() => router.push("/analytics" as never)}
-          >
-            <View style={styles.aiInsightIcon}>
-              <MaterialIcons name="insights" size={26} color="#6246A6" />
-            </View>
-
-            <ThemedText style={styles.quickActionLabel}>
-              AI Health Insights
-            </ThemedText>
-
-            <ThemedText style={styles.quickActionSub}>
-              Review health patterns
-            </ThemedText>
-          </Pressable>
         </View>
       </View>
 

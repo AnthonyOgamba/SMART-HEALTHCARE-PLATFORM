@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
 import { usePalette, type ThemePalette } from '@/hooks/use-palette';
+import { signIn } from '@/lib/services/auth';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -46,10 +47,12 @@ export default function LoginScreen() {
       // TODO: Member 1 owns auth — swap for the real login endpoint,
       // e.g. const { token } = await api.post('/auth/login', { email, password });
       // then setAuthToken(token) before navigating.
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await signIn(email, password);
       router.replace('/(tabs)/home');
-    } catch {
-      setErrors({ password: 'Incorrect email or password.' });
+    } catch (error) {
+      setErrors({
+        password: error instanceof Error ? error.message : 'Incorrect email or password.',
+      });
     } finally {
       setSubmitting(false);
     }

@@ -17,13 +17,13 @@ export default function ResetSuccessScreen() {
   return (
     <AuthLayout
       title="Success!"
-      subtitle="Your password has been reset successfully. You can now log in with your new credentials."
+      subtitle="If an account exists for that email, a password reset link has been sent. Open the link on this device to choose a new password."
       style={styles.card}>
       <View style={styles.checkCircle}>
         <MaterialIcons name="check" size={28} color={theme.white} />
       </View>
       <ThemedText type="defaultSemiBold" style={styles.statusText}>
-        Password Updated
+        Check Your Email
       </ThemedText>
 
       <View style={styles.buttonWrap}>

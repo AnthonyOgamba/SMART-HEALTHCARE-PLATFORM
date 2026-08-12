@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { AuthFooterLink } from '@/components/ui/auth-footer-link';
 import { AuthLayout } from '@/components/ui/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
+import { signUp } from '@/lib/services/auth';
 
 interface FormState {
   fullName: string;
@@ -85,10 +86,25 @@ export default function SignupScreen() {
       // TODO: Member 1 owns auth — swap for the real signup endpoint,
       // e.g. await api.post('/auth/signup', { ...form }), then store the
       // returned token via setAuthToken() and navigate into the app.
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      router.replace('/(tabs)/home');
-    } catch {
-      setErrors({ email: 'Something went wrong. Please try again.' });
+      const result = await signUp({
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName,
+        phone: form.phone,
+      });
+      if (result.session) {
+        router.replace('/(tabs)/home');
+      } else {
+        Alert.alert(
+          'Verify Your Email',
+          'We sent a verification link to your email address. Verify your email before logging in.',
+          [{ text: 'Return to Login', onPress: () => router.replace('/') }],
+        );
+      }
+    } catch (error) {
+      setErrors({
+        email: error instanceof Error ? error.message : 'Something went wrong. Please try again.',
+      });
     } finally {
       setSubmitting(false);
     }

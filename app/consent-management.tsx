@@ -1,9 +1,11 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
-import { ScreenContainer } from "@/components/ui/screen-states";
+import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
+import { getLatestConsents, recordConsent } from "@/lib/services/consents";
+import type { ConsentType } from "@/lib/supabase/database.types";
 
 export default function ConsentManagementScreen() {
   const router = useRouter();
@@ -12,20 +14,59 @@ export default function ConsentManagementScreen() {
 
   const [aiAssistantUsage, setAiAssistantUsage] = useState(true);
 
-  const [wearableData, setWearableData] = useState(true);
-
   const [notificationPermissions, setNotificationPermissions] = useState(false);
 
   const [saved, setSaved] = useState(false);
 
-  const savePreferences = () => {
-    setSaved(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  const fetchConsents = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    getLatestConsents()
+      .then((consents) => {
+        setHealthDataSharing(consents.health_data?.granted ?? false);
+        setAiAssistantUsage(consents.ai_processing?.granted ?? false);
+        setNotificationPermissions(consents.notifications?.granted ?? false);
+      })
+      .catch((loadError) =>
+        setError(loadError instanceof Error ? loadError.message : "Could not load consent settings."),
+      )
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => fetchConsents(), [fetchConsents]);
+
+  const changeConsent = async (
+    type: ConsentType,
+    granted: boolean,
+    apply: (value: boolean) => void,
+    previous: boolean,
+  ) => {
+    apply(granted);
+    setSaved(false);
+    try {
+      await recordConsent(type, granted);
+      setSaved(true);
+    } catch (saveError) {
+      apply(previous);
+      Alert.alert(
+        "Could Not Save Consent",
+        saveError instanceof Error ? saveError.message : "Try again.",
+      );
+    }
+  };
+
+  const savePreferences = () => {
     Alert.alert(
-      "Preferences Saved",
-      "Your privacy and consent preferences have been updated.",
+      "Preferences Saved Automatically",
+      "Each consent decision is saved when you change its switch.",
     );
   };
+
+  if (loading) return <LoadingState label="Loading consent preferences..." />;
+  if (error) return <ErrorState message={error} onRetry={fetchConsents} />;
 
   return (
     <ScreenContainer contentContainerStyle={styles.content}>
@@ -52,7 +93,9 @@ export default function ConsentManagementScreen() {
           title="Health Data Sharing"
           description="Allow your health information to be used by approved HealthNexus features and services."
           value={healthDataSharing}
-          onValueChange={setHealthDataSharing}
+          onValueChange={(value) =>
+            changeConsent("health_data", value, setHealthDataSharing, healthDataSharing)
+          }
         />
 
         <View style={styles.divider} />
@@ -64,19 +107,9 @@ export default function ConsentManagementScreen() {
           title="AI Assistant Usage"
           description="Allow AI Care to analyze the health information you provide to generate personalized guidance and insights."
           value={aiAssistantUsage}
-          onValueChange={setAiAssistantUsage}
-        />
-
-        <View style={styles.divider} />
-
-        <ConsentRow
-          icon="watch"
-          iconColor="#6246A6"
-          iconBackground="#EEE9F8"
-          title="Wearable Health Data"
-          description="Allow connected wearable data such as activity, sleep, and heart-rate information to support health insights."
-          value={wearableData}
-          onValueChange={setWearableData}
+          onValueChange={(value) =>
+            changeConsent("ai_processing", value, setAiAssistantUsage, aiAssistantUsage)
+          }
         />
 
         <View style={styles.divider} />
@@ -88,7 +121,14 @@ export default function ConsentManagementScreen() {
           title="Notification Permissions"
           description="Receive medication reminders, health alerts, wellness reminders, and other important updates."
           value={notificationPermissions}
-          onValueChange={setNotificationPermissions}
+          onValueChange={(value) =>
+            changeConsent(
+              "notifications",
+              value,
+              setNotificationPermissions,
+              notificationPermissions,
+            )
+          }
         />
       </View>
 
@@ -123,8 +163,6 @@ export default function ConsentManagementScreen() {
         <PermissionStatus label="Health Data" enabled={healthDataSharing} />
 
         <PermissionStatus label="AI Analysis" enabled={aiAssistantUsage} />
-
-        <PermissionStatus label="Wearable Data" enabled={wearableData} />
 
         <PermissionStatus
           label="Notifications"
