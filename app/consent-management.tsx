@@ -6,6 +6,7 @@ import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
 import { getLatestConsents, recordConsent } from "@/lib/services/consents";
 import type { ConsentType } from "@/lib/supabase/database.types";
+import { Brand, PageTypography } from "@/constants/theme";
 
 export default function ConsentManagementScreen() {
   const router = useRouter();
@@ -306,9 +307,8 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     flex: 1,
-    color: "#005EA4",
-    fontSize: 22,
-    fontWeight: "700",
+    color: Brand.accent,
+    ...PageTypography.title,
   },
 
   intro: {

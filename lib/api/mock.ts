@@ -8,47 +8,10 @@ import type {
   AppNotification,
   DashboardSummary,
   HealthMetric,
-  Medication,
-  MedicationDose,
   ProfileDetails,
 } from '@/types';
 
 export const USE_MOCK = true;
-
-export const mockMedications: Medication[] = [
-  {
-    id: 'med-1',
-    name: 'Metformin',
-    dose: '500mg',
-    scheduleTimes: ['08:00', '20:00'],
-    startDate: '2026-07-01',
-    active: true,
-  },
-  {
-    id: 'med-2',
-    name: 'Lisinopril',
-    dose: '10mg',
-    scheduleTimes: ['09:00'],
-    startDate: '2026-06-15',
-    active: true,
-  },
-];
-
-export const mockDoses: MedicationDose[] = [
-  {
-    id: 'dose-1',
-    medicationId: 'med-1',
-    scheduledFor: '2026-08-08T08:00:00Z',
-    status: 'taken',
-    recordedAt: '2026-08-08T08:05:00Z',
-  },
-  {
-    id: 'dose-2',
-    medicationId: 'med-1',
-    scheduledFor: '2026-08-08T20:00:00Z',
-    status: 'pending',
-  },
-];
 
 export const mockAppointments: Appointment[] = [
   {

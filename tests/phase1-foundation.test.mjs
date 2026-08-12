@@ -9,6 +9,14 @@ const migration = readFileSync(
 const authService = readFileSync(new URL('../lib/services/auth.ts', import.meta.url), 'utf8');
 const provider = readFileSync(new URL('../providers/auth-provider.tsx', import.meta.url), 'utf8');
 const client = readFileSync(new URL('../lib/supabase/client.ts', import.meta.url), 'utf8');
+const homeScreen = readFileSync(new URL('../app/(tabs)/home.tsx', import.meta.url), 'utf8');
+const loginScreen = readFileSync(new URL('../app/index.tsx', import.meta.url), 'utf8');
+const signupScreen = readFileSync(new URL('../app/signup.tsx', import.meta.url), 'utf8');
+const profileProvider = readFileSync(new URL('../providers/profile-provider.tsx', import.meta.url), 'utf8');
+const securityHardening = readFileSync(
+  new URL('../supabase/migrations/202608130003_security_definer_hardening.sql', import.meta.url),
+  'utf8',
+);
 
 test('Phase 1 creates only the approved application tables', () => {
   const tables = [...migration.matchAll(/create table public\.([a-z_]+)/g)].map((match) => match[1]);
@@ -60,4 +68,31 @@ test('session provider protects private routes and restores sessions', () => {
   assert.match(provider, /if \(!session && !PUBLIC_ROUTES\.has\(root\)\) router\.replace\('\/'\)/);
   assert.match(client, /persistSession:\s*true/);
   assert.match(client, /AsyncStorage/);
+});
+
+test('Home greeting uses the shared authenticated profile and local time', () => {
+  assert.doesNotMatch(homeScreen, /Good morning, Ema/);
+  assert.match(homeScreen, /useProfile\(\)/);
+  assert.match(homeScreen, /new Date\(\)\.getHours\(\)/);
+  assert.match(homeScreen, /profile\?\.full_name\.trim\(\)\.split/);
+});
+
+test('Sign In and Sign Up require Terms acceptance', () => {
+  for (const screen of [loginScreen, signupScreen]) {
+    assert.match(screen, /<TermsAgreement/);
+    assert.match(screen, /disabled=\{!termsAccepted\}/);
+  }
+});
+
+test('shared profile state reads and persists the authenticated profile', () => {
+  assert.match(profileProvider, /getProfile\(\)/);
+  assert.match(profileProvider, /updateProfile\(values\)/);
+  assert.match(profileProvider, /setProfile\(updated\)/);
+});
+
+test('record_consent remains a restricted authenticated-only definer RPC', () => {
+  assert.match(migration, /record_consent[\s\S]*security definer[\s\S]*set search_path = ''/);
+  assert.match(migration, /caller_id := auth\.uid\(\)/);
+  assert.match(securityHardening, /revoke execute on function public\.record_consent\(text, boolean\) from public, anon/);
+  assert.match(securityHardening, /grant execute on function public\.record_consent\(text, boolean\) to authenticated/);
 });

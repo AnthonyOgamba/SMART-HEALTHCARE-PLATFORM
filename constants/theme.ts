@@ -238,6 +238,13 @@ export const Typography = {
   caption: { fontSize: 13, fontWeight: '400' as const },
 };
 
+/** Shared hierarchy for major screen titles and supporting page copy. */
+export const PageTypography = {
+  title: { fontSize: 24, lineHeight: 32, fontWeight: '700' as const },
+  subtitle: { fontSize: 14, lineHeight: 20, fontWeight: '400' as const },
+  sectionTitle: { fontSize: 20, lineHeight: 28, fontWeight: '700' as const },
+};
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

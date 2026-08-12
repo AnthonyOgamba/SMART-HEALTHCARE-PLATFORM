@@ -5,6 +5,8 @@ import 'react-native-reanimated';
 
 import { LoadingState } from '@/components/ui/screen-states';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
+import { ProfileProvider } from '@/providers/profile-provider';
+import { MedicationReminderProvider } from '@/providers/medication-reminder-provider';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -26,6 +28,7 @@ function RootNavigator() {
       <Stack.Screen name="notifications" />
       <Stack.Screen name="settings" />
       <Stack.Screen name="privacy-policy" />
+      <Stack.Screen name="terms-and-conditions" />
       <Stack.Screen name="consent-management" />
       <Stack.Screen name="security-center" />
     </Stack>
@@ -40,7 +43,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <AuthProvider>
-        <RootNavigator />
+        <ProfileProvider>
+          <MedicationReminderProvider>
+            <RootNavigator />
+          </MedicationReminderProvider>
+        </ProfileProvider>
       </AuthProvider>
       <StatusBar style="dark" />
     </ThemeProvider>

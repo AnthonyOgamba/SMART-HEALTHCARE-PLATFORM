@@ -14,7 +14,14 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-const PUBLIC_ROUTES = new Set(['', 'signup', 'forgot-password', 'reset-password', 'reset-success']);
+const PUBLIC_ROUTES = new Set([
+  '',
+  'signup',
+  'forgot-password',
+  'reset-password',
+  'reset-success',
+  'terms-and-conditions',
+]);
 const AUTH_ENTRY_ROUTES = new Set(['', 'signup', 'forgot-password']);
 const OUT_OF_SCOPE_ROUTES = new Set(['analytics', 'wearable-data']);
 

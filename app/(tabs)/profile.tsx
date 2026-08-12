@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -13,8 +13,9 @@ import { SurfaceCard } from '@/components/ui/surface-card';
 import { Spacing } from '@/constants/theme';
 import { usePalette, type ThemePalette } from '@/hooks/use-palette';
 import { signOut } from '@/lib/services/auth';
-import { getProfile, updateProfile, type Profile } from '@/lib/services/profile';
+import type { Profile } from '@/lib/services/profile';
 import { useAuth } from '@/providers/auth-provider';
+import { useProfile } from '@/providers/profile-provider';
 
 type EditableProfile = Pick<
   Profile,
@@ -29,39 +30,23 @@ type EditableProfile = Pick<
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { profile, loading, error, refreshProfile, saveProfile } = useProfile();
   const theme = usePalette();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [draft, setDraft] = useState<EditableProfile | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    getProfile()
-      .then((value) => {
-        setProfile(value);
-        if (value) {
-          setDraft({
-            full_name: value.full_name,
-            phone: value.phone,
-            date_of_birth: value.date_of_birth,
-            emergency_contact_name: value.emergency_contact_name,
-            emergency_contact_relationship: value.emergency_contact_relationship,
-            emergency_contact_phone: value.emergency_contact_phone,
-          });
-        }
-      })
-      .catch((loadError) =>
-        setError(loadError instanceof Error ? loadError.message : 'Could not load your profile.'),
-      )
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => fetchData(), [fetchData]);
+  useEffect(() => {
+    if (!profile) return;
+    setDraft({
+      full_name: profile.full_name,
+      phone: profile.phone,
+      date_of_birth: profile.date_of_birth,
+      emergency_contact_name: profile.emergency_contact_name,
+      emergency_contact_relationship: profile.emergency_contact_relationship,
+      emergency_contact_phone: profile.emergency_contact_phone,
+    });
+  }, [profile]);
 
   const setField = (key: keyof EditableProfile) => (value: string) => {
     setDraft((current) => (current ? { ...current, [key]: value || null } : current));
@@ -74,30 +59,27 @@ export default function ProfileScreen() {
     }
     setSaving(true);
     try {
-      const updated = await updateProfile({ ...draft, full_name: draft.full_name.trim() });
-      setProfile(updated);
+      await saveProfile({ ...draft, full_name: draft.full_name.trim() });
       setEditing(false);
     } catch (saveError) {
-      Alert.alert('Could Not Save Profile', saveError instanceof Error ? saveError.message : 'Try again.');
+      console.error('Failed to save the authenticated profile.', saveError);
+      Alert.alert('Could Not Save Profile', 'Please check your information and try again.');
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) return <LoadingState label="Loading profile..." />;
-  if (error) return <ErrorState message={error} onRetry={fetchData} />;
+  if (error) return <ErrorState message={error} onRetry={refreshProfile} />;
   if (!profile || !draft) return <EmptyState message="No profile found." />;
 
   return (
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
         <ThemedText type="title" style={styles.headerTitle}>Profile Details</ThemedText>
-        <View style={styles.headerIcons}>
+        <View>
           <Pressable onPress={() => router.push('/settings')} hitSlop={8}>
             <MaterialIcons name="settings" size={22} color={theme.iconDefault} />
-          </Pressable>
-          <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
-            <MaterialIcons name="notifications-none" size={22} color={theme.iconDefault} />
           </Pressable>
         </View>
       </View>
@@ -167,7 +149,6 @@ export default function ProfileScreen() {
 const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   content: { padding: Spacing.md, gap: Spacing.md, backgroundColor: theme.screenBg },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerIcons: { flexDirection: 'row', gap: Spacing.md },
   headerTitle: { fontSize: 20, color: theme.accent },
   avatarSection: { alignItems: 'center', gap: 2 },
   avatarPlaceholder: { width: 84, height: 84, borderRadius: 42, backgroundColor: theme.avatarBg, alignItems: 'center', justifyContent: 'center' },

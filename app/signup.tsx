@@ -6,6 +6,7 @@ import { AuthFooterLink } from '@/components/ui/auth-footer-link';
 import { AuthLayout } from '@/components/ui/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TermsAgreement } from '@/components/ui/terms-agreement';
 import { Spacing } from '@/constants/theme';
 import { signUp } from '@/lib/services/auth';
 
@@ -70,6 +71,7 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const setField = (key: keyof FormState) => (value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -77,6 +79,7 @@ export default function SignupScreen() {
   };
 
   const handleSubmit = async () => {
+    if (!termsAccepted) return;
     const validationErrors = validate(form);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
@@ -173,11 +176,19 @@ export default function SignupScreen() {
       />
 
       <View style={{ marginTop: Spacing.sm }}>
+        <TermsAgreement
+          accepted={termsAccepted}
+          onAcceptedChange={setTermsAccepted}
+          onTermsPress={() => router.push('/terms-and-conditions')}
+          error={!termsAccepted ? 'Acceptance is required to create an account.' : undefined}
+        />
         <Button
           label="Create Account"
           icon="arrow-forward"
           onPress={handleSubmit}
           loading={submitting}
+          disabled={!termsAccepted}
+          style={{ marginTop: Spacing.md }}
         />
       </View>
 

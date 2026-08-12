@@ -88,6 +88,16 @@ export interface Database {
         Args: { p_consent_type: ConsentType; p_granted: boolean };
         Returns: Database['public']['Tables']['consents']['Row'];
       };
+      create_medication: { Args: Record<string, unknown>; Returns: Json };
+      update_medication: { Args: Record<string, unknown>; Returns: Json };
+      archive_medication: { Args: { p_medication_id: string }; Returns: Json };
+      ensure_medication_logs_for_date: { Args: { p_date: string }; Returns: number };
+      refresh_missed_medication_logs: { Args: Record<string, never>; Returns: number };
+      get_medications_for_date: { Args: { p_date: string }; Returns: Json };
+      get_medication_details: { Args: { p_medication_id: string }; Returns: Json };
+      record_medication_status: { Args: { p_log_id: string; p_status: string }; Returns: Json };
+      get_medication_history: { Args: { p_from: string; p_to: string; p_medication_id?: string | null }; Returns: Json };
+      get_active_medications: { Args: Record<string, never>; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -5,6 +5,9 @@ import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
 import { getUserSettings, updateUserSettings, type UserSettingsUpdate } from "@/lib/services/settings";
+import { Brand, PageTypography } from "@/constants/theme";
+import { reconcileMedicationReminders } from "@/lib/services/local-medication-reminders";
+import { getActiveMedications } from "@/lib/services/medications";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -50,6 +53,13 @@ export default function SettingsScreen() {
     apply(nextValue);
     try {
       await updateUserSettings(values);
+      if (values.medication_reminders !== undefined) {
+        const medications = values.medication_reminders ? await getActiveMedications() : [];
+        const granted = await reconcileMedicationReminders(medications, values.medication_reminders);
+        if (values.medication_reminders && !granted) {
+          Alert.alert("Reminders Disabled", "Medication reminder permission is not enabled on this device.");
+        }
+      }
     } catch (saveError) {
       apply(previousValue);
       Alert.alert(
@@ -318,9 +328,8 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#005EA4",
-    fontSize: 24,
-    fontWeight: "700",
+    color: Brand.accent,
+    ...PageTypography.title,
   },
 
   sectionLabel: {
