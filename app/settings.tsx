@@ -1,20 +1,73 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
-import { ScreenContainer } from "@/components/ui/screen-states";
+import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
+import { getUserSettings, updateUserSettings, type UserSettingsUpdate } from "@/lib/services/settings";
+import { Brand, PageTypography } from "@/constants/theme";
+import { reconcileMedicationReminders } from "@/lib/services/local-medication-reminders";
+import { getActiveMedications } from "@/lib/services/medications";
 
 export default function SettingsScreen() {
   const router = useRouter();
 
   const [medicationReminders, setMedicationReminders] = useState(true);
 
+  const [appointmentReminders, setAppointmentReminders] = useState(true);
+
   const [criticalAlerts, setCriticalAlerts] = useState(true);
 
   const [aiInsights, setAiInsights] = useState(true);
 
   const [biometricLock, setBiometricLock] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSettings = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    getUserSettings()
+      .then((settings) => {
+        if (!settings) throw new Error("Settings were not found for this account.");
+        setMedicationReminders(settings.medication_reminders);
+        setAppointmentReminders(settings.appointment_reminders);
+        setCriticalAlerts(settings.critical_alerts);
+        setAiInsights(settings.ai_enabled);
+      })
+      .catch((loadError) =>
+        setError(loadError instanceof Error ? loadError.message : "Could not load settings."),
+      )
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => fetchSettings(), [fetchSettings]);
+
+  const persist = async (
+    values: UserSettingsUpdate,
+    apply: (value: boolean) => void,
+    nextValue: boolean,
+    previousValue: boolean,
+  ) => {
+    apply(nextValue);
+    try {
+      await updateUserSettings(values);
+      if (values.medication_reminders !== undefined) {
+        const medications = values.medication_reminders ? await getActiveMedications() : [];
+        const granted = await reconcileMedicationReminders(medications, values.medication_reminders);
+        if (values.medication_reminders && !granted) {
+          Alert.alert("Reminders Disabled", "Medication reminder permission is not enabled on this device.");
+        }
+      }
+    } catch (saveError) {
+      apply(previousValue);
+      Alert.alert(
+        "Could Not Save Setting",
+        saveError instanceof Error ? saveError.message : "Try again.",
+      );
+    }
+  };
 
   const handleChangePassword = () => {
     Alert.alert(
@@ -40,6 +93,9 @@ export default function SettingsScreen() {
     );
   };
 
+  if (loading) return <LoadingState label="Loading settings..." />;
+  if (error) return <ErrorState message={error} onRetry={fetchSettings} />;
+
   return (
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -58,7 +114,31 @@ export default function SettingsScreen() {
           title="Medication Reminders"
           description="Receive reminders when it is time to take your medication."
           value={medicationReminders}
-          onValueChange={setMedicationReminders}
+          onValueChange={(value) =>
+            persist(
+              { medication_reminders: value },
+              setMedicationReminders,
+              value,
+              medicationReminders,
+            )
+          }
+        />
+
+        <View style={styles.divider} />
+
+        <ToggleRow
+          icon="event"
+          title="Appointment Reminders"
+          description="Receive reminders before your scheduled appointments."
+          value={appointmentReminders}
+          onValueChange={(value) =>
+            persist(
+              { appointment_reminders: value },
+              setAppointmentReminders,
+              value,
+              appointmentReminders,
+            )
+          }
         />
 
         <View style={styles.divider} />
@@ -68,7 +148,9 @@ export default function SettingsScreen() {
           title="Critical Health Alerts"
           description="Receive important alerts related to health and safety checks."
           value={criticalAlerts}
-          onValueChange={setCriticalAlerts}
+          onValueChange={(value) =>
+            persist({ critical_alerts: value }, setCriticalAlerts, value, criticalAlerts)
+          }
         />
 
         <View style={styles.divider} />
@@ -78,7 +160,9 @@ export default function SettingsScreen() {
           title="AI Health Insights"
           description="Receive AI-generated wellness summaries and health pattern insights."
           value={aiInsights}
-          onValueChange={setAiInsights}
+          onValueChange={(value) =>
+            persist({ ai_enabled: value }, setAiInsights, value, aiInsights)
+          }
         />
       </View>
 
@@ -244,9 +328,8 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#005EA4",
-    fontSize: 24,
-    fontWeight: "700",
+    color: Brand.accent,
+    ...PageTypography.title,
   },
 
   sectionLabel: {

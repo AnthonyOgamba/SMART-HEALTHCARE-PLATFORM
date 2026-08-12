@@ -7,6 +7,7 @@ import { AuthLayout } from '@/components/ui/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
+import { resetPasswordForEmail } from '@/lib/services/auth';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -29,10 +30,12 @@ export default function ForgotPasswordScreen() {
     setSubmitting(true);
     try {
       // TODO: Member 1 owns auth — swap for e.g. api.post('/auth/forgot-password', { email })
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await resetPasswordForEmail(email);
       router.push('/reset-success');
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : 'Something went wrong. Please try again.',
+      );
     } finally {
       setSubmitting(false);
     }

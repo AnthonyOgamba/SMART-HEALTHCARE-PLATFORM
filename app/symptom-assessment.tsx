@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
+import { Brand, PageTypography } from "@/constants/theme";
 
 export default function SymptomAssessmentScreen() {
   const router = useRouter();
@@ -148,9 +149,8 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#00288E",
-    fontSize: 24,
-    fontWeight: "700",
+    color: Brand.accent,
+    ...PageTypography.title,
   },
 
   progressHeader: {

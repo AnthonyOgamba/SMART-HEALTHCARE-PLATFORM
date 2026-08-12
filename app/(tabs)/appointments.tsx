@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
+import { Brand, PageTypography } from "@/constants/theme";
 
 export default function CareScheduleScreen() {
   const router = useRouter();
@@ -298,14 +299,13 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#191C1E",
-    fontSize: 28,
-    fontWeight: "700",
+    color: Brand.accent,
+    ...PageTypography.title,
   },
 
   subtitle: {
-    color: "#59616D",
-    fontSize: 14,
+    color: Brand.textSecondary,
+    ...PageTypography.subtitle,
     marginTop: 3,
   },
 

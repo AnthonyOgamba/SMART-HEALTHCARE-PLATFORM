@@ -144,14 +144,6 @@ export default function HealthLogScreen() {
         </View>
       </View>
 
-      <Pressable
-        style={styles.analyticsButton}
-        onPress={() => router.push("/analytics" as never)}
-      >
-        <MaterialIcons name="insights" size={21} color="#FFFFFF" />
-
-        <Text style={styles.analyticsButtonText}>View Health Analytics</Text>
-      </Pressable>
     </ScreenContainer>
   );
 }

@@ -3,6 +3,8 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Brand, PageTypography } from "@/constants/theme";
+
 const durationOptions = ["Just started", "Few hours", "Days"];
 
 export default function SymptomDetailsScreen() {
@@ -197,10 +199,8 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#00288E",
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
+    color: Brand.accent,
+    ...PageTypography.title,
   },
 
   content: {

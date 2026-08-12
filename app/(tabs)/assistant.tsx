@@ -1,9 +1,11 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
+import { PageTypography } from "@/constants/theme";
+import { usePalette, type ThemePalette } from "@/hooks/use-palette";
 
 type Message = {
   id: number;
@@ -30,6 +32,8 @@ const initialMessages: Message[] = [
 
 export default function AssistantScreen() {
   const router = useRouter();
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -110,7 +114,7 @@ export default function AssistantScreen() {
           style={styles.backButton}
           onPress={() => router.replace("/(tabs)/home")}
         >
-          <MaterialIcons name="arrow-back" size={24} color="#00288E" />
+          <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>AI Care Assistant</Text>
@@ -128,7 +132,7 @@ export default function AssistantScreen() {
           onPress={() => setInput("I want to check my symptoms")}
         >
           <View style={styles.featureIconBlue}>
-            <MaterialIcons name="health-and-safety" size={22} color="#00288E" />
+            <MaterialIcons name="health-and-safety" size={22} color={theme.primary} />
           </View>
 
           <Text style={styles.featureTitle}>Check Symptoms</Text>
@@ -277,11 +281,11 @@ export default function AssistantScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   content: {
     padding: 0,
     paddingBottom: 110,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: theme.screenBg,
   },
 
   header: {
@@ -289,9 +293,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: theme.screenBg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E7E9F0",
+    borderBottomColor: theme.cardBorder,
   },
 
   backButton: {
@@ -301,10 +305,8 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#00288E",
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
+    color: theme.accent,
+    ...PageTypography.title,
   },
 
   dateRow: {
@@ -314,14 +316,14 @@ const styles = StyleSheet.create({
   },
 
   datePill: {
-    backgroundColor: "#D9E3F4",
+    backgroundColor: theme.blueTint,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
 
   dateText: {
-    color: "#444653",
+    color: theme.textSecondary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -336,9 +338,9 @@ const styles = StyleSheet.create({
   featureCard: {
     flex: 1,
     minHeight: 92,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E1E4EB",
+    borderColor: theme.cardBorder,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 12,
@@ -351,7 +353,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: theme.blueTint,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -375,7 +377,7 @@ const styles = StyleSheet.create({
   },
 
   featureTitle: {
-    color: "#121C28",
+    color: theme.textPrimary,
     fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
@@ -396,7 +398,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#087F8C",
+    backgroundColor: theme.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -405,7 +407,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#91B5D6",
+    backgroundColor: theme.blueIcon,
     alignItems: "center",
     justifyContent: "center",
     opacity: 0.8,
@@ -413,9 +415,9 @@ const styles = StyleSheet.create({
 
   aiBubble: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#C4C5D5",
+    borderColor: theme.inputBorder,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 12,
     borderBottomLeftRadius: 12,
@@ -424,13 +426,13 @@ const styles = StyleSheet.create({
   },
 
   aiMessageText: {
-    color: "#121C28",
+    color: theme.textPrimary,
     fontSize: 16,
     lineHeight: 24,
   },
 
   aiTime: {
-    color: "#757684",
+    color: theme.textMuted,
     fontSize: 10,
     marginTop: 8,
   },
@@ -445,7 +447,7 @@ const styles = StyleSheet.create({
   userBubble: {
     flex: 1,
     maxWidth: "80%",
-    backgroundColor: "#1E40AF",
+    backgroundColor: theme.primary,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 0,
     borderBottomLeftRadius: 12,
@@ -470,7 +472,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#00288E",
+    backgroundColor: theme.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -482,9 +484,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 5,
-    backgroundColor: "#EEF4FF",
+    backgroundColor: theme.blueTint,
     borderWidth: 1,
-    borderColor: "#C4C5D5",
+    borderColor: theme.inputBorder,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 12,
     borderBottomLeftRadius: 12,
@@ -499,7 +501,7 @@ const styles = StyleSheet.create({
   },
 
   typingText: {
-    color: "#757684",
+    color: theme.textMuted,
     fontSize: 12,
     fontStyle: "italic",
     fontWeight: "600",
@@ -557,9 +559,9 @@ const styles = StyleSheet.create({
     minHeight: 58,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F9FF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#C4C5D5",
+    borderColor: theme.inputBorder,
     borderRadius: 999,
     paddingHorizontal: 12,
     shadowColor: "#000",
@@ -582,7 +584,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minHeight: 48,
-    color: "#121C28",
+    color: theme.textPrimary,
     fontSize: 16,
     paddingHorizontal: 8,
   },
@@ -598,13 +600,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#00288E",
+    backgroundColor: theme.primary,
     alignItems: "center",
     justifyContent: "center",
   },
 
   disclaimer: {
-    color: "#757684",
+    color: theme.textMuted,
     fontSize: 12,
     lineHeight: 16,
     fontWeight: "600",

@@ -26,20 +26,81 @@ export type MedicationStatus = 'taken' | 'skipped' | 'missed' | 'pending';
 
 export interface Medication {
   id: string;
+  userId: string;
   name: string;
   dose: string;
-  scheduleTimes: string[]; // e.g. ["08:00", "20:00"]
+  instructions: string | null;
   startDate: string;
-  endDate?: string;
+  endDate: string | null;
+  reminderSound: import('@/lib/notification-sounds').MedicationReminderSound;
   active: boolean;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface MedicationDose {
+export interface MedicationSchedule {
   id: string;
   medicationId: string;
+  timeOfDay: string;
+  timezone: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MedicationLog {
+  id: string;
+  medicationId: string;
+  scheduleId: string | null;
   scheduledFor: string;
   status: MedicationStatus;
-  recordedAt?: string;
+  recordedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MedicationAdherenceSummary {
+  scheduled: number;
+  taken: number;
+  skipped: number;
+  missed: number;
+  pending: number;
+  percentage: number;
+}
+
+export interface MedicationForDay {
+  medication: Medication;
+  schedule: MedicationSchedule | null;
+  log: MedicationLog;
+}
+
+export interface MedicationDay {
+  date: string;
+  summary: Omit<MedicationAdherenceSummary, 'percentage'>;
+  items: MedicationForDay[];
+}
+
+export interface MedicationDetails {
+  medication: Medication;
+  schedules: MedicationSchedule[];
+  nextLog: MedicationLog | null;
+  adherence: MedicationAdherenceSummary;
+}
+
+export interface MedicationHistoryEntry {
+  id: string;
+  medicationId: string;
+  medicationName: string;
+  dose: string;
+  scheduledFor: string;
+  status: MedicationStatus;
+  recordedAt: string | null;
+}
+
+export interface MedicationHistory {
+  entries: MedicationHistoryEntry[];
+  summary: MedicationAdherenceSummary;
 }
 
 export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';

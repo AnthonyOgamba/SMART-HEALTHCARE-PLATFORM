@@ -6,7 +6,6 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { HealthMetricRow } from "@/components/ui/health-metric-row";
-import { IconBadge } from "@/components/ui/icon-badge";
 import {
   EmptyState,
   ErrorState,
@@ -14,12 +13,12 @@ import {
   ScreenContainer,
 } from "@/components/ui/screen-states";
 import { SectionHeader } from "@/components/ui/section-header";
-import { StatusPill } from "@/components/ui/status-pill";
 import { SurfaceCard } from "@/components/ui/surface-card";
 import { Radius, Spacing } from "@/constants/theme";
 import { usePalette, type ThemePalette } from "@/hooks/use-palette";
 import { mockDashboard, mockDelay, mockHealthMetrics } from "@/lib/api/mock";
 import type { DashboardSummary, HealthMetric } from "@/types";
+import { useProfile } from "@/providers/profile-provider";
 
 interface DashboardData {
   summary: DashboardSummary;
@@ -35,6 +34,7 @@ async function loadDashboard(): Promise<DashboardData> {
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { profile } = useProfile();
 
   const theme = usePalette();
 
@@ -73,13 +73,17 @@ export default function DashboardScreen() {
   }
 
   const { summary, metrics } = data;
+  const hour = new Date().getHours();
+  const dayPart = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  const firstName = profile?.full_name.trim().split(/\s+/)[0];
+  const greeting = firstName ? `Good ${dayPart}, ${firstName}` : `Good ${dayPart}`;
 
   return (
     <ScreenContainer contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <ThemedText style={styles.greeting}>Good morning, Ema</ThemedText>
+          <ThemedText style={styles.greeting}>{greeting}</ThemedText>
 
           <ThemedText style={styles.greetingSub}>
             How are you feeling today?
@@ -100,9 +104,6 @@ export default function DashboardScreen() {
           />
         </Pressable>
 
-        <View style={styles.avatarPlaceholder}>
-          <MaterialIcons name="person" size={22} color={theme.avatarIcon} />
-        </View>
       </View>
 
       {/* Health Summary */}
@@ -115,67 +116,6 @@ export default function DashboardScreen() {
           ))}
         </View>
 
-        <Pressable
-          style={styles.analyticsButton}
-          accessibilityRole="button"
-          onPress={() => router.push("/analytics" as never)}
-        >
-          <ThemedText style={styles.analyticsLabel}>
-            Detailed Analytics
-          </ThemedText>
-
-          <MaterialIcons name="arrow-forward" size={16} color={theme.white} />
-        </Pressable>
-      </SurfaceCard>
-
-      {/* Today's Medication */}
-      <SurfaceCard>
-        <SectionHeader
-          label="TODAY'S MEDICATION"
-          trailing={
-            <StatusPill
-              label="1/3 COMPLETED"
-              color={theme.successPillText}
-              backgroundColor={theme.successPillBg}
-            />
-          }
-        />
-
-        <Pressable
-          style={styles.medRow}
-          onPress={() => router.push("/(tabs)/medications" as never)}
-        >
-          <IconBadge
-            icon="medication"
-            color={theme.blueIcon}
-            backgroundColor={theme.blueTint}
-            size={36}
-          />
-
-          <View style={styles.medInfo}>
-            <ThemedText type="defaultSemiBold">Vitamin D</ThemedText>
-
-            <View style={styles.medTimeRow}>
-              <MaterialIcons
-                name="schedule"
-                size={14}
-                color={theme.iconMuted}
-              />
-
-              <ThemedText style={styles.medTime}>8:00 AM</ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.medStatus}>
-            <MaterialIcons
-              name="check-circle"
-              size={16}
-              color={theme.greenIcon}
-            />
-
-            <ThemedText style={styles.medStatusText}>Completed</ThemedText>
-          </View>
-        </Pressable>
       </SurfaceCard>
 
       {/* Upcoming Appointment */}
@@ -255,23 +195,6 @@ export default function DashboardScreen() {
             </ThemedText>
           </Pressable>
 
-          <Pressable
-            style={styles.quickActionCard}
-            accessibilityRole="button"
-            onPress={() => router.push("/analytics" as never)}
-          >
-            <View style={styles.aiInsightIcon}>
-              <MaterialIcons name="insights" size={26} color="#6246A6" />
-            </View>
-
-            <ThemedText style={styles.quickActionLabel}>
-              AI Health Insights
-            </ThemedText>
-
-            <ThemedText style={styles.quickActionSub}>
-              Review health patterns
-            </ThemedText>
-          </Pressable>
         </View>
       </View>
 

@@ -1,542 +1,74 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import {
-    Pressable,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    View,
-} from "react-native";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
-import { ScreenContainer } from "@/components/ui/screen-states";
-import { usePalette, type ThemePalette } from "@/hooks/use-palette";
+import { LoadingState, ScreenContainer } from '@/components/ui/screen-states';
+import { Brand, PageTypography } from '@/constants/theme';
+import {
+  DEFAULT_MEDICATION_REMINDER_SOUND,
+  MEDICATION_REMINDER_SOUNDS,
+  type MedicationReminderSound,
+} from '@/lib/notification-sounds';
+import { cancelMedicationReminders, scheduleMedicationReminders } from '@/lib/services/local-medication-reminders';
+import { createMedication, getMedicationDetails, updateMedication } from '@/lib/services/medications';
+import { getUserSettings } from '@/lib/services/settings';
+import type { MedicationSchedule } from '@/types';
+
+const today = () => new Date().toISOString().slice(0, 10);
+const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export default function AddMedicationScreen() {
   const router = useRouter();
-  const theme = usePalette();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = Boolean(id);
+  const [name,setName]=useState(''); const [dose,setDose]=useState(''); const [instructions,setInstructions]=useState('');
+  const [startDate,setStartDate]=useState(today()); const [endDate,setEndDate]=useState('');
+  const [times,setTimes]=useState(['08:00']); const [newTime,setNewTime]=useState('');
+  const [reminderSound,setReminderSound]=useState<MedicationReminderSound>(DEFAULT_MEDICATION_REMINDER_SOUND);
+  const [reminders,setReminders]=useState(true); const [oldSchedules,setOldSchedules]=useState<MedicationSchedule[]>([]);
+  const [loading,setLoading]=useState(Boolean(id)); const [submitting,setSubmitting]=useState(false); const [error,setError]=useState<string>();
+  const timezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
 
-  const [name, setName] = useState("");
-  const [dosage, setDosage] = useState("");
-  const [frequency, setFrequency] = useState("Once Daily");
-  const [doseTime, setDoseTime] = useState("08:00 AM");
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [smsReminders, setSmsReminders] = useState(false);
+  useEffect(() => { if (!id) return; getMedicationDetails(id).then((value) => {
+    setName(value.medication.name); setDose(value.medication.dose); setInstructions(value.medication.instructions ?? '');
+    setStartDate(value.medication.startDate); setEndDate(value.medication.endDate ?? ''); setTimes(value.schedules.map((s)=>s.timeOfDay.slice(0,5))); setReminderSound(value.medication.reminderSound); setOldSchedules(value.schedules);
+  }).catch(()=>setError('Could not load this medication.')).finally(()=>setLoading(false)); },[id]);
 
-  const saveMedication = () => {
-    if (!name.trim() || !dosage.trim()) {
-      return;
-    }
-
-    router.back();
+  const addTime=()=>{ const value=newTime.trim(); if(!TIME.test(value)){setError('Use a 24-hour time such as 08:30.');return;} if(times.includes(value)){setError('Reminder times must be unique.');return;} setTimes([...times,value].sort());setNewTime('');setError(undefined); };
+  const save=async()=>{
+    const cleanName=name.trim(), cleanDose=dose.trim();
+    if(!cleanName||!cleanDose){setError('Medication name and dose are required.');return;}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(startDate)|| (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate))){setError('Dates must use YYYY-MM-DD.');return;}
+    if(endDate && endDate<startDate){setError('End date cannot be before start date.');return;}
+    if(times.length===0){setError('Add at least one reminder time.');return;}
+    setSubmitting(true);setError(undefined);
+    try{
+      const input={name:cleanName,dose:cleanDose,instructions:instructions.trim()||null,startDate,endDate:endDate||null,scheduleTimes:times,timezone,reminderSound};
+      const result=id?await updateMedication(id,input):await createMedication(input);
+      try {
+        if(id) await cancelMedicationReminders(oldSchedules.map((s)=>s.id));
+        const settings=await getUserSettings();
+        if(reminders && settings?.medication_reminders){ const granted=await scheduleMedicationReminders(result.medication,result.schedules); if(!granted) Alert.alert('Medication Saved','Device notification permission is disabled. Your medication was saved without local reminders.'); }
+      } catch {
+        Alert.alert('Medication Saved','Your medication was saved, but local reminders could not be updated. You can retry from Settings.');
+      }
+      router.replace('/(tabs)/medications');
+    }catch(saveError){setError(saveError instanceof Error?saveError.message:'Could not save medication.');}
+    finally{setSubmitting(false);}
   };
-  return (
-    <ScreenContainer style={styles.content}>
-      <View style={styles.topBar}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <MaterialIcons name="arrow-back" size={22} color="#00288E" />
-        </Pressable>
-
-        <Text style={styles.topBarTitle}>Medication Manager</Text>
-      </View>
-
-      <View style={styles.main}>
-        <View style={styles.headingSection}>
-          <Text style={styles.title}>Add Medication</Text>
-          <Text style={styles.subtitle}>
-            Schedule your next dose and set up reminders.
-          </Text>
-        </View>
-
-        <View style={styles.imagePlaceholder}>
-          <MaterialIcons
-            name="medication"
-            size={62}
-            color="rgba(0,40,142,0.35)"
-          />
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Medication Name</Text>
-
-            <View style={styles.inputWithIcon}>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="e.g., Lisinopril"
-                placeholderTextColor="#6B7280"
-                style={styles.inputFlex}
-              />
-
-              <MaterialIcons name="medication" size={18} color="#A7A8B4" />
-            </View>
-          </View>
-
-          <View style={styles.twoColumnRow}>
-            <View style={styles.halfField}>
-              <Text style={styles.label}>Dosage</Text>
-              <TextInput
-                value={dosage}
-                onChangeText={setDosage}
-                placeholder="e.g., 10mg"
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.halfField}>
-              <Text style={styles.label}>Frequency</Text>
-
-              <Pressable
-                style={styles.selectInput}
-                onPress={() =>
-                  setFrequency((current) =>
-                    current === "Once Daily" ? "Twice Daily" : "Once Daily",
-                  )
-                }
-              >
-                <Text style={styles.selectText}>{frequency}</Text>
-                <MaterialIcons
-                  name="keyboard-arrow-down"
-                  size={21}
-                  color="#444653"
-                />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons name="schedule" size={18} color="#00288E" />
-            <Text style={styles.sectionHeaderText}>Dose Schedule</Text>
-          </View>
-
-          <View style={styles.scheduleRow}>
-            <View style={styles.timeInput}>
-              <Text style={styles.timeText}>{doseTime}</Text>
-            </View>
-
-            <Pressable
-              style={styles.addTimeButton}
-              onPress={() =>
-                setDoseTime((current) =>
-                  current === "08:00 AM" ? "08:30 AM" : "08:00 AM",
-                )
-              }
-            >
-              <MaterialIcons name="add" size={24} color="#00288E" />
-            </Pressable>
-          </View>
-
-          <View style={styles.timePill}>
-            <Text style={styles.timePillText}>{doseTime}</Text>
-            <MaterialIcons name="close" size={13} color="#00714D" />
-          </View>
-        </View>
-
-        <View style={styles.reminderCard}>
-          <Text style={styles.reminderHeading}>Reminder Settings</Text>
-
-          <View style={styles.reminderRow}>
-            <View style={styles.reminderLeft}>
-              <View style={styles.notificationIcon}>
-                <MaterialIcons
-                  name="notifications-none"
-                  size={22}
-                  color="#00288E"
-                />
-              </View>
-
-              <View>
-                <Text style={styles.reminderTitle}>Push Notifications</Text>
-                <Text style={styles.reminderSubtitle}>
-                  Alert me on this device
-                </Text>
-              </View>
-            </View>
-
-            <Switch
-              value={pushNotifications}
-              onValueChange={setPushNotifications}
-              trackColor={{
-                false: "#C4C5D5",
-                true: "#00288E",
-              }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.reminderRow}>
-            <View style={styles.reminderLeft}>
-              <View style={styles.smsIcon}>
-                <MaterialIcons name="sms" size={21} color="#00714D" />
-              </View>
-
-              <View>
-                <Text style={styles.reminderTitle}>SMS Reminders</Text>
-                <Text style={styles.reminderSubtitle}>
-                  Text alerts for critical doses
-                </Text>
-              </View>
-            </View>
-
-            <Switch
-              value={smsReminders}
-              onValueChange={setSmsReminders}
-              trackColor={{
-                false: "#C4C5D5",
-                true: "#00288E",
-              }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-        </View>
-
-        <View style={styles.actions}>
-          <Pressable
-            accessibilityRole="button"
-            style={[
-              styles.saveButton,
-              (!name.trim() || !dosage.trim()) && styles.saveButtonDisabled,
-            ]}
-            onPress={saveMedication}
-          >
-            <MaterialIcons name="save" size={20} color="#FFFFFF" />
-
-            <Text style={styles.saveButtonText}>Save Medication</Text>
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.back()}
-            style={styles.discardButton}
-          >
-            <Text style={styles.discardText}>Discard Changes</Text>
-          </Pressable>
-        </View>
-      </View>
-    </ScreenContainer>
-  );
+  if(loading)return <LoadingState label="Loading medication..."/>;
+  return <ScreenContainer contentContainerStyle={styles.content}>
+    <View style={styles.header}><Pressable onPress={()=>router.back()}><MaterialIcons name="arrow-back" size={24} color={Brand.primary}/></Pressable><Text style={styles.headerTitle}>{editing?'Edit Medication':'Add Medication'}</Text></View>
+    <View style={styles.card}><Field label="Medication Name" value={name} onChange={setName} placeholder="e.g., Lisinopril"/><Field label="Dose" value={dose} onChange={setDose} placeholder="e.g., 10 mg"/><Field label="Instructions" value={instructions} onChange={setInstructions} placeholder="Optional instructions" multiline/><Field label="Start Date" value={startDate} onChange={setStartDate} placeholder="YYYY-MM-DD"/><Field label="End Date" value={endDate} onChange={setEndDate} placeholder="Optional YYYY-MM-DD"/></View>
+    <View style={styles.card}><Text style={styles.section}>Reminder Times</Text><View style={styles.timeRow}><TextInput style={[styles.input,styles.flex]} value={newTime} onChangeText={setNewTime} placeholder="HH:MM"/><Pressable style={styles.add} onPress={addTime}><MaterialIcons name="add" size={22} color={Brand.primary}/></Pressable></View>
+      <View style={styles.pills}>{times.map((time)=><View key={time} style={styles.pill}><Text>{time}</Text><Pressable onPress={()=>setTimes(times.filter((x)=>x!==time))}><MaterialIcons name="close" size={16} color={Brand.primary}/></Pressable></View>)}</View>
+      <View><Text style={styles.label}>Reminder Sound</Text><Text style={styles.muted}>Custom sounds require an installed app build. Expo Go safely uses Default.</Text></View>
+      <View style={styles.soundOptions}>{MEDICATION_REMINDER_SOUNDS.map((option)=><Pressable key={option.key} accessibilityRole="radio" accessibilityState={{checked:reminderSound===option.key}} style={[styles.soundOption,reminderSound===option.key&&styles.soundOptionSelected]} onPress={()=>setReminderSound(option.key)}><MaterialIcons name={reminderSound===option.key?'radio-button-checked':'radio-button-unchecked'} size={20} color={Brand.primary}/><Text style={styles.soundLabel}>{option.label}</Text></Pressable>)}</View>
+      <View style={styles.switchRow}><View style={styles.flex}><Text style={styles.label}>Local Device Reminders</Text><Text style={styles.muted}>Uses the global medication reminder setting</Text></View><Switch value={reminders} onValueChange={setReminders}/></View></View>
+    {error?<Text style={styles.error}>{error}</Text>:null}
+    <Pressable disabled={submitting} style={[styles.save,submitting&&styles.disabled]} onPress={save}><Text style={styles.saveText}>{submitting?'Saving...':'Save Medication'}</Text></Pressable>
+  </ScreenContainer>;
 }
-
-const makeStyles = (theme: ThemePalette) =>
-  StyleSheet.create({
-    content: {
-      padding: 0,
-      backgroundColor: "#F8F9FF",
-    },
-
-    topBar: {
-      height: 64,
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 16,
-      backgroundColor: "#F8F9FF",
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: "#ECEEF3",
-    },
-
-    backButton: {
-      width: 32,
-      height: 40,
-      alignItems: "flex-start",
-      justifyContent: "center",
-    },
-
-    topBarTitle: {
-      color: "#00288E",
-      fontSize: 20,
-      fontWeight: "700",
-    },
-
-    main: {
-      paddingHorizontal: 20,
-      paddingVertical: 28,
-      gap: 16,
-    },
-
-    headingSection: {
-      marginBottom: 8,
-      gap: 4,
-    },
-
-    title: {
-      color: "#121C28",
-      fontSize: 28,
-      lineHeight: 36,
-      fontWeight: "700",
-    },
-
-    subtitle: {
-      color: "#444653",
-      fontSize: 16,
-      lineHeight: 24,
-      maxWidth: 320,
-    },
-
-    imagePlaceholder: {
-      height: 192,
-      borderRadius: 12,
-      backgroundColor: "#DCE8F7",
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-    },
-
-    card: {
-      backgroundColor: "#FFFFFF",
-      borderWidth: 1,
-      borderColor: "rgba(196,197,213,0.3)",
-      borderRadius: 12,
-      padding: 24,
-      gap: 24,
-      shadowColor: "#000",
-      shadowOpacity: 0.05,
-      shadowRadius: 6,
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      elevation: 2,
-    },
-
-    field: {
-      gap: 4,
-    },
-
-    label: {
-      color: "#444653",
-      fontSize: 14,
-      lineHeight: 20,
-      fontWeight: "500",
-    },
-
-    input: {
-      height: 48,
-      backgroundColor: "#F8F9FF",
-      borderWidth: 1,
-      borderColor: "#C4C5D5",
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      color: "#121C28",
-      fontSize: 16,
-    },
-
-    inputWithIcon: {
-      height: 48,
-      backgroundColor: "#F8F9FF",
-      borderWidth: 1,
-      borderColor: "#C4C5D5",
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      flexDirection: "row",
-      alignItems: "center",
-    },
-
-    inputFlex: {
-      flex: 1,
-      color: "#121C28",
-      fontSize: 16,
-    },
-
-    twoColumnRow: {
-      flexDirection: "row",
-      gap: 16,
-    },
-
-    halfField: {
-      flex: 1,
-      gap: 4,
-    },
-
-    selectInput: {
-      height: 48,
-      backgroundColor: "#F8F9FF",
-      borderWidth: 1,
-      borderColor: "#C4C5D5",
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-
-    selectText: {
-      color: "#121C28",
-      fontSize: 15,
-    },
-
-    sectionHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-
-    sectionHeaderText: {
-      color: "#00288E",
-      fontSize: 14,
-      fontWeight: "500",
-    },
-
-    scheduleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 16,
-    },
-
-    timeInput: {
-      flex: 1,
-      height: 48,
-      backgroundColor: "#F8F9FF",
-      borderWidth: 1,
-      borderColor: "#C4C5D5",
-      borderRadius: 8,
-      justifyContent: "center",
-      paddingHorizontal: 16,
-    },
-
-    timeText: {
-      color: "#121C28",
-      fontSize: 16,
-    },
-
-    addTimeButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 8,
-      backgroundColor: "#E5EEFF",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    timePill: {
-      alignSelf: "flex-start",
-      flexDirection: "row",
-      gap: 8,
-      alignItems: "center",
-      paddingHorizontal: 12,
-      paddingVertical: 4,
-      borderRadius: 999,
-      backgroundColor: "#6CF8BB",
-    },
-
-    timePillText: {
-      color: "#00714D",
-      fontSize: 12,
-      fontWeight: "600",
-    },
-
-    reminderCard: {
-      backgroundColor: "rgba(30,64,175,0.05)",
-      borderWidth: 1,
-      borderColor: "rgba(30,64,175,0.1)",
-      borderRadius: 12,
-      padding: 24,
-      gap: 16,
-    },
-
-    reminderHeading: {
-      color: "#00288E",
-      fontSize: 14,
-      fontWeight: "500",
-    },
-
-    reminderRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-    },
-
-    reminderLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 16,
-      flex: 1,
-    },
-
-    notificationIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: "rgba(0,40,142,0.1)",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    smsIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: "rgba(0,108,73,0.1)",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    reminderTitle: {
-      color: "#121C28",
-      fontSize: 16,
-      fontWeight: "500",
-    },
-
-    reminderSubtitle: {
-      color: "#444653",
-      fontSize: 12,
-      fontWeight: "600",
-    },
-
-    actions: {
-      paddingTop: 24,
-      gap: 8,
-    },
-
-    saveButton: {
-      height: 56,
-      borderRadius: 12,
-      backgroundColor: "#00288E",
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-      shadowColor: "#000",
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      elevation: 3,
-    },
-
-    saveButtonDisabled: {
-      opacity: 0.55,
-    },
-
-    saveButtonText: {
-      color: "#FFFFFF",
-      fontSize: 18,
-      lineHeight: 28,
-      fontWeight: "700",
-    },
-
-    discardButton: {
-      height: 48,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    discardText: {
-      color: "#757684",
-      fontSize: 14,
-      fontWeight: "500",
-    },
-  });
+function Field({label,value,onChange,placeholder,multiline=false}:{label:string;value:string;onChange:(v:string)=>void;placeholder:string;multiline?:boolean}){return <View><Text style={styles.label}>{label}</Text><TextInput style={[styles.input,multiline&&styles.multiline]} value={value} onChangeText={onChange} placeholder={placeholder} multiline={multiline}/></View>;}
+const styles=StyleSheet.create({content:{padding:18,paddingBottom:80,gap:16,backgroundColor:Brand.screenBg},header:{flexDirection:'row',alignItems:'center',gap:12},headerTitle:{...PageTypography.title,color:Brand.accent},card:{backgroundColor:'#FFF',borderWidth:1,borderColor:Brand.cardBorder,borderRadius:16,padding:18,gap:16},label:{color:Brand.textPrimary,fontWeight:'600',marginBottom:5},input:{height:48,borderWidth:1,borderColor:Brand.inputBorder,borderRadius:9,paddingHorizontal:13,color:Brand.textPrimary},multiline:{height:88,paddingTop:12},section:{fontSize:18,fontWeight:'700',color:Brand.accent},timeRow:{flexDirection:'row',gap:10},flex:{flex:1},add:{width:48,height:48,borderRadius:9,backgroundColor:'#E6EEF9',alignItems:'center',justifyContent:'center'},pills:{flexDirection:'row',flexWrap:'wrap',gap:8},pill:{flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#E6EEF9',borderRadius:999,paddingHorizontal:12,paddingVertical:7},soundOptions:{gap:8},soundOption:{minHeight:44,flexDirection:'row',alignItems:'center',gap:10,borderWidth:1,borderColor:Brand.inputBorder,borderRadius:9,paddingHorizontal:12},soundOptionSelected:{borderColor:Brand.primary,backgroundColor:'#F2F7FD'},soundLabel:{color:Brand.textPrimary,fontWeight:'500'},switchRow:{flexDirection:'row',alignItems:'center'},muted:{color:Brand.textSecondary,fontSize:12},error:{color:'#C62828',fontWeight:'600'},save:{height:54,borderRadius:12,backgroundColor:Brand.primary,alignItems:'center',justifyContent:'center'},saveText:{color:'#FFF',fontSize:17,fontWeight:'700'},disabled:{opacity:.55}});

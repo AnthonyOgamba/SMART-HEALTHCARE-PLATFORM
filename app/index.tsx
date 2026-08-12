@@ -7,8 +7,10 @@ import { AuthFooterLink } from '@/components/ui/auth-footer-link';
 import { AuthLayout } from '@/components/ui/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TermsAgreement } from '@/components/ui/terms-agreement';
 import { Spacing } from '@/constants/theme';
 import { usePalette, type ThemePalette } from '@/hooks/use-palette';
+import { signIn } from '@/lib/services/auth';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -26,6 +28,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSubmit = async () => {
     const nextErrors: FormErrors = {};
@@ -37,6 +40,7 @@ export default function LoginScreen() {
     if (!password) {
       nextErrors.password = 'Password is required.';
     }
+    if (!termsAccepted) return;
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -46,10 +50,12 @@ export default function LoginScreen() {
       // TODO: Member 1 owns auth — swap for the real login endpoint,
       // e.g. const { token } = await api.post('/auth/login', { email, password });
       // then setAuthToken(token) before navigating.
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await signIn(email, password);
       router.replace('/(tabs)/home');
-    } catch {
-      setErrors({ password: 'Incorrect email or password.' });
+    } catch (error) {
+      setErrors({
+        password: error instanceof Error ? error.message : 'Incorrect email or password.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -97,7 +103,20 @@ export default function LoginScreen() {
         </Pressable>
       </View>
 
-      <Button label="Login" icon="arrow-forward" onPress={handleSubmit} loading={submitting} />
+      <TermsAgreement
+        accepted={termsAccepted}
+        onAcceptedChange={setTermsAccepted}
+        onTermsPress={() => router.push('/terms-and-conditions')}
+        error={!termsAccepted ? 'Acceptance is required to sign in.' : undefined}
+      />
+
+      <Button
+        label="Login"
+        icon="arrow-forward"
+        onPress={handleSubmit}
+        loading={submitting}
+        disabled={!termsAccepted}
+      />
 
       <AuthFooterLink
         prompt="Don't have an account?"
