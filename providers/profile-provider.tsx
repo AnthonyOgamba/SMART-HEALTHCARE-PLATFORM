@@ -44,11 +44,12 @@ export function ProfileProvider({ children }: PropsWithChildren) {
   }, [refreshProfile]);
 
   const saveProfile = useCallback(async (values: ProfileUpdate) => {
+    if (!user) throw new Error('Authentication is required to update your profile.');
     const updated = await updateProfile(values);
     setProfile(updated);
     setError(null);
     return updated;
-  }, []);
+  }, [user]);
 
   const value = useMemo(
     () => ({ profile, loading, error, refreshProfile, saveProfile }),

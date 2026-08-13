@@ -2,8 +2,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { useScopedPalette } from '@/components/ui/auth-theme-context';
 import { Radius, Spacing } from '@/constants/theme';
-import { usePalette } from '@/hooks/use-palette';
 
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -26,15 +26,15 @@ export function Input({
   style,
   ...rest
 }: InputProps) {
-  const theme = usePalette();
+  const theme = useScopedPalette();
   const borderColor = error ? theme.danger : theme.inputBorder;
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText type="defaultSemiBold" style={styles.label}>
+      <ThemedText type="defaultSemiBold" style={[styles.label, { color: theme.textPrimary }]}>
         {label}
       </ThemedText>
-      <View style={[styles.fieldRow, { borderColor }]}>
+      <View style={[styles.fieldRow, { borderColor, backgroundColor: theme.cardBg }]}>
         {icon ? <MaterialIcons name={icon} size={20} color={theme.fieldIcon} style={styles.leadingIcon} /> : null}
         <TextInput
           accessibilityLabel={label}

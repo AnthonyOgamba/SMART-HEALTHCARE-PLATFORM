@@ -1,16 +1,21 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
 import { getUserSettings, updateUserSettings, type UserSettingsUpdate } from "@/lib/services/settings";
-import { Brand, PageTypography } from "@/constants/theme";
+import { PageTypography } from "@/constants/theme";
 import { reconcileMedicationReminders } from "@/lib/services/local-medication-reminders";
 import { getActiveMedications } from "@/lib/services/medications";
+import { getUpcomingAppointments } from "@/lib/services/appointments";
+import { reconcileAppointmentReminders } from "@/lib/services/local-appointment-reminders";
+import { usePalette, type ThemePalette } from '@/hooks/use-palette';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [medicationReminders, setMedicationReminders] = useState(true);
 
@@ -19,9 +24,6 @@ export default function SettingsScreen() {
   const [criticalAlerts, setCriticalAlerts] = useState(true);
 
   const [aiInsights, setAiInsights] = useState(true);
-
-  const [biometricLock, setBiometricLock] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +62,13 @@ export default function SettingsScreen() {
           Alert.alert("Reminders Disabled", "Medication reminder permission is not enabled on this device.");
         }
       }
+      if (values.appointment_reminders !== undefined) {
+        const appointments = values.appointment_reminders ? await getUpcomingAppointments() : [];
+        const granted = await reconcileAppointmentReminders(appointments, values.appointment_reminders);
+        if (values.appointment_reminders && !granted) {
+          Alert.alert("Reminders Disabled", "Appointment reminder permission is not enabled on this device.");
+        }
+      }
     } catch (saveError) {
       apply(previousValue);
       Alert.alert(
@@ -69,30 +78,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleChangePassword = () => {
-    Alert.alert(
-      "Change Password",
-      "Password changes will be connected to the authentication service.",
-    );
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This will permanently remove your account and associated health information.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-        },
-      ],
-    );
-  };
-
   if (loading) return <LoadingState label="Loading settings..." />;
   if (error) return <ErrorState message={error} onRetry={fetchSettings} />;
 
@@ -100,7 +85,7 @@ export default function SettingsScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#005EA4" />
+          <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Settings</Text>
@@ -157,8 +142,8 @@ export default function SettingsScreen() {
 
         <ToggleRow
           icon="auto-awesome"
-          title="AI Health Insights"
-          description="Receive AI-generated wellness summaries and health pattern insights."
+          title="Genie Cares Health Insights"
+          description="Receive Genie Cares wellness summaries and health pattern insights."
           value={aiInsights}
           onValueChange={(value) =>
             persist({ ai_enabled: value }, setAiInsights, value, aiInsights)
@@ -167,22 +152,11 @@ export default function SettingsScreen() {
       </View>
 
       <Text style={styles.sectionLabel}>SECURITY</Text>
-
       <View style={styles.card}>
-        <ToggleRow
-          icon="fingerprint"
-          title="Biometric App Lock"
-          description="Use supported device authentication to protect access to health information."
-          value={biometricLock}
-          onValueChange={setBiometricLock}
-        />
-
-        <View style={styles.divider} />
-
         <NavigationRow
           icon="security"
           title="Security Center"
-          description="Review account, health-data, privacy, and AI safety controls."
+          description="Review account, health-data, privacy, and Genie Cares safety controls."
           onPress={() => router.push("/security-center" as never)}
         />
 
@@ -192,7 +166,7 @@ export default function SettingsScreen() {
           icon="lock"
           title="Change Password"
           description="Update your account credentials."
-          onPress={handleChangePassword}
+          onPress={() => router.push('/change-password' as never)}
         />
       </View>
 
@@ -202,7 +176,7 @@ export default function SettingsScreen() {
         <NavigationRow
           icon="fact-check"
           title="Consent Management"
-          description="Control AI, health-data, wearable, and notification permissions."
+          description="Control Genie Cares, health-data, and notification permissions."
           onPress={() => router.push("/consent-management" as never)}
         />
 
@@ -216,8 +190,13 @@ export default function SettingsScreen() {
         />
       </View>
 
+      <Text style={styles.sectionLabel}>APP</Text>
+      <View style={styles.card}>
+        <NavigationRow icon="notifications" title="Notifications" description="Review your notification feed." onPress={() => router.push('/notifications' as never)} />
+      </View>
+
       <View style={styles.securityNotice}>
-        <MaterialIcons name="shield" size={22} color="#005EA4" />
+        <MaterialIcons name="shield" size={22} color={theme.primary} />
 
         <View style={styles.noticeContent}>
           <Text style={styles.noticeTitle}>Health Information Security</Text>
@@ -230,13 +209,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Pressable style={styles.deleteButton} onPress={handleDeleteAccount}>
-        <MaterialIcons name="delete-outline" size={20} color="#BA1A1A" />
-
-        <Text style={styles.deleteText}>Delete Account</Text>
-      </Pressable>
-
-      <Text style={styles.version}>HealthNexus 1.0</Text>
+      <Text style={styles.version}>Genie Cares 1.0</Text>
     </ScreenContainer>
   );
 }
@@ -254,10 +227,12 @@ function ToggleRow({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.row}>
       <View style={styles.icon}>
-        <MaterialIcons name={icon} size={22} color="#005EA4" />
+        <MaterialIcons name={icon} size={22} color={theme.primary} />
       </View>
 
       <View style={styles.rowContent}>
@@ -270,8 +245,8 @@ function ToggleRow({
         value={value}
         onValueChange={onValueChange}
         trackColor={{
-          false: "#D7DBDF",
-          true: "#005EA4",
+          false: theme.disabledBackground,
+          true: theme.primary,
         }}
         thumbColor="#FFFFFF"
       />
@@ -290,10 +265,12 @@ function NavigationRow({
   description: string;
   onPress: () => void;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable style={styles.row} onPress={onPress}>
       <View style={styles.icon}>
-        <MaterialIcons name={icon} size={22} color="#005EA4" />
+        <MaterialIcons name={icon} size={22} color={theme.primary} />
       </View>
 
       <View style={styles.rowContent}>
@@ -302,17 +279,17 @@ function NavigationRow({
         <Text style={styles.rowDescription}>{description}</Text>
       </View>
 
-      <MaterialIcons name="chevron-right" size={24} color="#858B94" />
+      <MaterialIcons name="chevron-right" size={24} color={theme.iconMuted} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   content: {
     padding: 18,
     paddingBottom: 110,
     gap: 14,
-    backgroundColor: "#F7F9FB",
+    backgroundColor: theme.screenBg,
   },
 
   header: {
@@ -328,12 +305,12 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: Brand.accent,
+    color: theme.accent,
     ...PageTypography.title,
   },
 
   sectionLabel: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.8,
@@ -341,9 +318,9 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E1E5E9",
+    borderColor: theme.cardBorder,
     borderRadius: 16,
     paddingHorizontal: 15,
   },
@@ -360,7 +337,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#E4F0FA",
+    backgroundColor: theme.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -370,13 +347,13 @@ const styles = StyleSheet.create({
   },
 
   rowTitle: {
-    color: "#191C1E",
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: "700",
   },
 
   rowDescription: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 10,
     lineHeight: 15,
     marginTop: 3,
@@ -384,16 +361,16 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "#EDF0F2",
+    backgroundColor: theme.cardBorder,
   },
 
   securityNotice: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 11,
-    backgroundColor: "#EEF6FB",
+    backgroundColor: theme.infoBoxBg,
     borderWidth: 1,
-    borderColor: "#D4E5F0",
+    borderColor: theme.infoBoxBorder,
     borderRadius: 14,
     padding: 15,
   },
@@ -403,13 +380,13 @@ const styles = StyleSheet.create({
   },
 
   noticeTitle: {
-    color: "#005EA4",
+    color: theme.primary,
     fontSize: 13,
     fontWeight: "700",
   },
 
   noticeText: {
-    color: "#59616D",
+    color: theme.infoBoxText,
     fontSize: 10,
     lineHeight: 16,
     marginTop: 3,
@@ -420,7 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#F0BBB5",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -434,7 +411,7 @@ const styles = StyleSheet.create({
   },
 
   version: {
-    color: "#858B94",
+    color: theme.textMuted,
     fontSize: 11,
     textAlign: "center",
   },

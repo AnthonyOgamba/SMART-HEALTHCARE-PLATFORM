@@ -1,10 +1,10 @@
 export const MEDICATION_REMINDER_SOUNDS = [
   { key: 'default', label: 'Default', filename: null },
-  { key: 'gentle_chime', label: 'Gentle Chime', filename: 'medication_gentle_chime.wav' },
-  { key: 'soft_bell', label: 'Soft Bell', filename: 'medication_soft_bell.wav' },
-  { key: 'bright_alert', label: 'Bright Alert', filename: 'medication_bright_alert.wav' },
-  { key: 'calm_tone', label: 'Calm Tone', filename: 'medication_calm_tone.wav' },
-  { key: 'classic_reminder', label: 'Classic Reminder', filename: 'medication_classic_reminder.wav' },
+  { key: 'gentle_chime', label: 'Gentle Chime', filename: null },
+  { key: 'soft_bell', label: 'Soft Bell', filename: null },
+  { key: 'bright_alert', label: 'Bright Alert', filename: 'air-raid-siren-wailing-urgent.wav' },
+  { key: 'calm_tone', label: 'Calm Tone', filename: null },
+  { key: 'classic_reminder', label: 'Classic Reminder', filename: 'alarm-clock-digital-beeping.wav' },
 ] as const;
 
 export type MedicationReminderSound = (typeof MEDICATION_REMINDER_SOUNDS)[number]['key'];

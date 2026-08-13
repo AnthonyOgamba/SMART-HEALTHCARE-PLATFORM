@@ -33,7 +33,15 @@ export const Colors = {
 // respond to dark mode.
 export const Brand = {
   primary: '#1B4F72',
+  secondary: '#2B6CB0',
   accent: '#2B6CB0',
+  bannerBackground: '#1B4F72',
+  primaryButtonBackground: '#1B4F72',
+  secondaryButtonBackground: '#2B6CB0',
+  primaryInteractive: '#1B4F72',
+  selectedBackground: '#EAF4FC',
+  disabledBackground: '#D6DEE6',
+  disabledText: '#6B7785',
   backgroundWash: '#EAF4FC',
   inputBorder: '#D6DEE6',
   placeholder: '#9AA5B1',
@@ -67,7 +75,14 @@ export interface ThemeColors {
   textMuted: string;
   placeholder: string;
   primary: string;
+  secondary: string;
   accent: string;
+  bannerBackground: string;
+  primaryButtonBackground: string;
+  secondaryButtonBackground: string;
+  selectedBackground: string;
+  disabledBackground: string;
+  disabledText: string;
   iconDefault: string;
   iconMuted: string;
   fieldIcon: string;
@@ -111,7 +126,14 @@ export const Palette: { light: ThemeColors; dark: ThemeColors } = {
 
     // Brand
     primary: '#1B4F72',
+    secondary: '#2B6CB0',
     accent: '#2B6CB0',
+    bannerBackground: '#1B4F72',
+    primaryButtonBackground: '#1B4F72',
+    secondaryButtonBackground: '#2B6CB0',
+    selectedBackground: '#EAF4FC',
+    disabledBackground: '#D6DEE6',
+    disabledText: '#6B7785',
 
     // Icons
     iconDefault: '#4B5563',
@@ -127,11 +149,11 @@ export const Palette: { light: ThemeColors; dark: ThemeColors } = {
     avatarBg: '#EEF1F4',
     avatarIcon: '#9CA3AF',
 
-    // Icon badge tints (Heart Rate, Sleep, Activity, category icons)
+    // Semantic and category icon badge tints
     redTint: '#FBE7E9',
     redIcon: '#D64550',
     blueTint: '#E6EEF9',
-    blueIcon: '#3B6EA5',
+    blueIcon: '#2B6CB0',
     greenTint: '#E6F4EA',
     greenIcon: '#3E8E5A',
     amberTint: '#FAEEDA',
@@ -164,7 +186,14 @@ export const Palette: { light: ThemeColors; dark: ThemeColors } = {
     placeholder: '#6B7280',
 
     primary: '#3E7CAE',
+    secondary: '#6FA8DC',
     accent: '#6FA8DC',
+    bannerBackground: '#1B4F72',
+    primaryButtonBackground: '#1B4F72',
+    secondaryButtonBackground: '#2B6CB0',
+    selectedBackground: '#1C2B3A',
+    disabledBackground: '#3A3F47',
+    disabledText: '#A6ADB8',
 
     iconDefault: '#A6ADB8',
     iconMuted: '#7A8290',
@@ -223,7 +252,7 @@ export const Semantic = {
   success: '#2E7D32',
   warning: '#B45309',
   danger: '#C62828',
-  info: '#0a7ea4',
+  info: '#2B6CB0',
   border: '#E2E8F0',
   borderDark: '#2A2E31',
   muted: '#687076',

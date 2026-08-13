@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
+import { Brand } from "@/constants/theme";
 
 export default function HealthLogScreen() {
   const router = useRouter();
@@ -11,13 +12,13 @@ export default function HealthLogScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#00288E" />
+          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Health Log</Text>
 
         <View style={styles.headerIcon}>
-          <MaterialIcons name="health-and-safety" size={23} color="#005EA4" />
+          <MaterialIcons name="health-and-safety" size={23} color={Brand.secondary} />
         </View>
       </View>
 
@@ -27,7 +28,7 @@ export default function HealthLogScreen() {
         </View>
 
         <View style={styles.summaryContent}>
-          <Text style={styles.summaryLabel}>AI WELLNESS SUMMARY</Text>
+          <Text style={styles.summaryLabel}>GENIE CARES WELLNESS SUMMARY</Text>
 
           <Text style={styles.summaryTitle}>Your recent health activity</Text>
 
@@ -42,14 +43,14 @@ export default function HealthLogScreen() {
 
       <LogCard
         icon="health-and-safety"
-        iconColor="#005EA4"
-        iconBackground="#E4F0FA"
+        iconColor={Brand.secondary}
+        iconBackground={Brand.backgroundWash}
         time="2:10 PM"
         title="Symptom Assessment"
         description="Headache • Moderate severity"
         status="Monitor"
-        statusColor="#005EA4"
-        statusBackground="#E4F0FA"
+        statusColor={Brand.secondary}
+        statusBackground={Brand.backgroundWash}
       />
 
       <LogCard
@@ -66,22 +67,22 @@ export default function HealthLogScreen() {
 
       <LogCard
         icon="directions-walk"
-        iconColor="#6246A6"
-        iconBackground="#EEE9F8"
+        iconColor={Brand.secondary}
+        iconBackground={Brand.backgroundWash}
         time="12:30 PM"
         title="Activity Update"
         description="8,432 steps recorded"
         status="Synced"
-        statusColor="#6246A6"
-        statusBackground="#EEE9F8"
+        statusColor={Brand.secondary}
+        statusBackground={Brand.backgroundWash}
       />
 
       <Text style={styles.sectionTitle}>Yesterday</Text>
 
       <LogCard
         icon="bedtime"
-        iconColor="#6246A6"
-        iconBackground="#EEE9F8"
+        iconColor={Brand.secondary}
+        iconBackground={Brand.backgroundWash}
         time="7:45 AM"
         title="Sleep Record"
         description="7h 45m total sleep"
@@ -90,26 +91,14 @@ export default function HealthLogScreen() {
         statusBackground="#DFF5EC"
       />
 
-      <LogCard
-        icon="favorite"
-        iconColor="#B42318"
-        iconBackground="#FFE9E7"
-        time="9:15 AM"
-        title="Heart Rate"
-        description="Average resting heart rate: 71 BPM"
-        status="Stable"
-        statusColor="#00714D"
-        statusBackground="#DFF5EC"
-      />
-
       <View style={styles.aiCard}>
         <View style={styles.aiHeader}>
           <View style={styles.aiIcon}>
-            <MaterialIcons name="psychology" size={25} color="#00288E" />
+            <MaterialIcons name="psychology" size={25} color={Brand.primary} />
           </View>
 
           <View style={styles.aiHeaderText}>
-            <Text style={styles.aiTitle}>AI Pattern Insight</Text>
+            <Text style={styles.aiTitle}>Genie Cares Pattern Insight</Text>
 
             <Text style={styles.aiSubtitle}>Based on your recent logs</Text>
           </View>
@@ -127,12 +116,12 @@ export default function HealthLogScreen() {
         >
           <MaterialIcons name="auto-awesome" size={20} color="#FFFFFF" />
 
-          <Text style={styles.aiButtonText}>Ask AI About My Health Log</Text>
+          <Text style={styles.aiButtonText}>Ask Genie Cares About My Health Log</Text>
         </Pressable>
       </View>
 
       <View style={styles.privacyCard}>
-        <MaterialIcons name="lock" size={21} color="#00714D" />
+        <MaterialIcons name="lock" size={21} color={Brand.primary} />
 
         <View style={styles.privacyText}>
           <Text style={styles.privacyTitle}>Private health information</Text>
@@ -233,7 +222,7 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     flex: 1,
-    color: "#00288E",
+    color: Brand.primary,
     fontSize: 24,
     fontWeight: "700",
   },
@@ -248,7 +237,7 @@ const styles = StyleSheet.create({
   },
 
   summaryCard: {
-    backgroundColor: "#005EA4",
+    backgroundColor: Brand.bannerBackground,
     borderRadius: 18,
     padding: 18,
     flexDirection: "row",
@@ -380,7 +369,7 @@ const styles = StyleSheet.create({
   },
 
   aiTitle: {
-    color: "#00288E",
+    color: Brand.primary,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -401,7 +390,7 @@ const styles = StyleSheet.create({
   aiButton: {
     height: 48,
     borderRadius: 11,
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primaryButtonBackground,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -431,7 +420,7 @@ const styles = StyleSheet.create({
   },
 
   privacyTitle: {
-    color: "#006C49",
+    color: Brand.primary,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -443,19 +432,4 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  analyticsButton: {
-    height: 52,
-    borderRadius: 12,
-    backgroundColor: "#005EA4",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-
-  analyticsButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
 });

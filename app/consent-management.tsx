@@ -1,15 +1,18 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
 import { getLatestConsents, recordConsent } from "@/lib/services/consents";
 import type { ConsentType } from "@/lib/supabase/database.types";
-import { Brand, PageTypography } from "@/constants/theme";
+import { PageTypography } from "@/constants/theme";
+import { usePalette, type ThemePalette } from '@/hooks/use-palette';
 
 export default function ConsentManagementScreen() {
   const router = useRouter();
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [healthDataSharing, setHealthDataSharing] = useState(true);
 
@@ -73,26 +76,26 @@ export default function ConsentManagementScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#005EA4" />
+          <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Consent Management</Text>
 
-        <MaterialIcons name="privacy-tip" size={24} color="#404752" />
+        <MaterialIcons name="privacy-tip" size={24} color={theme.iconDefault} />
       </View>
 
       <Text style={styles.intro}>
-        Control how your health information is used within HealthNexus. You can
+        Control how your health information is used within Genie Cares. You can
         update these preferences at any time.
       </Text>
 
       <View style={styles.card}>
         <ConsentRow
           icon="health-and-safety"
-          iconColor="#00714D"
-          iconBackground="#89FA9B"
+          iconColor={theme.primary}
+          iconBackground={theme.backgroundWash}
           title="Health Data Sharing"
-          description="Allow your health information to be used by approved HealthNexus features and services."
+          description="Allow your health information to be used by approved Genie Cares features and services."
           value={healthDataSharing}
           onValueChange={(value) =>
             changeConsent("health_data", value, setHealthDataSharing, healthDataSharing)
@@ -103,10 +106,10 @@ export default function ConsentManagementScreen() {
 
         <ConsentRow
           icon="psychology"
-          iconColor="#005EA4"
-          iconBackground="#D3E4FF"
-          title="AI Assistant Usage"
-          description="Allow AI Care to analyze the health information you provide to generate personalized guidance and insights."
+          iconColor={theme.primary}
+          iconBackground={theme.backgroundWash}
+          title="Genie Cares Usage"
+          description="Allow Genie Cares to analyze the health information you provide to generate personalized guidance and insights."
           value={aiAssistantUsage}
           onValueChange={(value) =>
             changeConsent("ai_processing", value, setAiAssistantUsage, aiAssistantUsage)
@@ -117,8 +120,8 @@ export default function ConsentManagementScreen() {
 
         <ConsentRow
           icon="notifications-active"
-          iconColor="#087F8C"
-          iconBackground="#79F6F5"
+          iconColor={theme.secondary}
+          iconBackground={theme.backgroundWash}
           title="Notification Permissions"
           description="Receive medication reminders, health alerts, wellness reminders, and other important updates."
           value={notificationPermissions}
@@ -135,21 +138,21 @@ export default function ConsentManagementScreen() {
 
       <View style={styles.aiNotice}>
         <View style={styles.aiNoticeIcon}>
-          <MaterialIcons name="auto-awesome" size={22} color="#6246A6" />
+          <MaterialIcons name="auto-awesome" size={22} color={theme.primary} />
         </View>
 
         <View style={styles.noticeContent}>
-          <Text style={styles.noticeTitle}>AI Consent</Text>
+          <Text style={styles.noticeTitle}>Genie Cares Consent</Text>
 
           <Text style={styles.noticeText}>
-            If AI Assistant Usage is disabled, AI Care should not process your
+            If Genie Cares Usage is disabled, Genie Cares should not process your
             personal health information for personalized analysis.
           </Text>
         </View>
       </View>
 
       <View style={styles.securityNotice}>
-        <MaterialIcons name="shield" size={21} color="#005EA4" />
+        <MaterialIcons name="shield" size={21} color={theme.primary} />
 
         <Text style={styles.securityText}>
           Health information is sensitive. Production services should enforce
@@ -163,7 +166,7 @@ export default function ConsentManagementScreen() {
 
         <PermissionStatus label="Health Data" enabled={healthDataSharing} />
 
-        <PermissionStatus label="AI Analysis" enabled={aiAssistantUsage} />
+        <PermissionStatus label="Genie Cares Analysis" enabled={aiAssistantUsage} />
 
         <PermissionStatus
           label="Notifications"
@@ -172,7 +175,7 @@ export default function ConsentManagementScreen() {
       </View>
 
       <Pressable style={styles.saveButton} onPress={savePreferences}>
-        <MaterialIcons name="save" size={20} color="#FFFFFF" />
+        <MaterialIcons name="save" size={20} color={theme.white} />
 
         <Text style={styles.saveButtonText}>Save Preferences</Text>
       </Pressable>
@@ -181,7 +184,7 @@ export default function ConsentManagementScreen() {
         style={styles.securityButton}
         onPress={() => router.push("/security-center" as never)}
       >
-        <MaterialIcons name="security" size={20} color="#005EA4" />
+        <MaterialIcons name="security" size={20} color={theme.secondary} />
 
         <Text style={styles.securityButtonText}>Review Security Center</Text>
       </Pressable>
@@ -212,6 +215,8 @@ function ConsentRow({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.consentRow}>
       <View
@@ -233,8 +238,8 @@ function ConsentRow({
             value={value}
             onValueChange={onValueChange}
             trackColor={{
-              false: "#E6E8EA",
-              true: "#005EA4",
+              false: theme.disabledBackground,
+              true: theme.primary,
             }}
             thumbColor="#FFFFFF"
           />
@@ -253,13 +258,15 @@ function PermissionStatus({
   label: string;
   enabled: boolean;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.permissionRow}>
       <View style={styles.permissionLeft}>
         <MaterialIcons
           name={enabled ? "check-circle" : "cancel"}
           size={18}
-          color={enabled ? "#00714D" : "#BA1A1A"}
+          color={enabled ? theme.greenIcon : theme.redIcon}
         />
 
         <Text style={styles.permissionLabel}>{label}</Text>
@@ -275,7 +282,7 @@ function PermissionStatus({
           style={[
             styles.permissionBadgeText,
             {
-              color: enabled ? "#00714D" : "#BA1A1A",
+              color: enabled ? theme.greenIcon : theme.redIcon,
             },
           ]}
         >
@@ -286,12 +293,12 @@ function PermissionStatus({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 110,
     gap: 18,
-    backgroundColor: "#F7F9FB",
+    backgroundColor: theme.screenBg,
   },
 
   header: {
@@ -307,21 +314,21 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     flex: 1,
-    color: Brand.accent,
+    color: theme.accent,
     ...PageTypography.title,
   },
 
   intro: {
-    color: "#404752",
+    color: theme.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     paddingHorizontal: 4,
   },
 
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E6E8EA",
+    borderColor: theme.cardBorder,
     borderRadius: 12,
     paddingHorizontal: 20,
 
@@ -365,13 +372,13 @@ const styles = StyleSheet.create({
 
   consentTitle: {
     flex: 1,
-    color: "#191C1E",
+    color: theme.textPrimary,
     fontSize: 16,
     fontWeight: "700",
   },
 
   consentDescription: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 3,
@@ -379,7 +386,7 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "#E6E8EA",
+    backgroundColor: theme.cardBorder,
     marginLeft: 58,
   },
 
@@ -387,9 +394,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: "#F2EEFA",
+    backgroundColor: theme.infoBoxBg,
     borderWidth: 1,
-    borderColor: "#DED5EE",
+    borderColor: theme.infoBoxBorder,
     borderRadius: 12,
     padding: 16,
   },
@@ -398,7 +405,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#E3DAF3",
+    backgroundColor: theme.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -408,13 +415,13 @@ const styles = StyleSheet.create({
   },
 
   noticeTitle: {
-    color: "#523990",
+    color: theme.secondary,
     fontSize: 14,
     fontWeight: "700",
   },
 
   noticeText: {
-    color: "#59616D",
+    color: theme.infoBoxText,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 3,
@@ -424,31 +431,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: "#F7F9FB",
+    backgroundColor: theme.backgroundWash,
     borderWidth: 1,
-    borderColor: "#E6E8EA",
+    borderColor: theme.cardBorder,
     borderRadius: 12,
     padding: 16,
   },
 
   securityText: {
     flex: 1,
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 12,
     lineHeight: 18,
   },
 
   summaryCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E6E8EA",
+    borderColor: theme.cardBorder,
     borderRadius: 12,
     padding: 16,
     gap: 12,
   },
 
   summaryTitle: {
-    color: "#191C1E",
+    color: theme.textPrimary,
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 2,
@@ -467,7 +474,7 @@ const styles = StyleSheet.create({
   },
 
   permissionLabel: {
-    color: "#404752",
+    color: theme.textSecondary,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -479,11 +486,11 @@ const styles = StyleSheet.create({
   },
 
   permissionEnabled: {
-    backgroundColor: "#DFF5EC",
+    backgroundColor: theme.greenTint,
   },
 
   permissionDisabled: {
-    backgroundColor: "#FFE9E7",
+    backgroundColor: theme.redTint,
   },
 
   permissionBadgeText: {
@@ -494,13 +501,13 @@ const styles = StyleSheet.create({
   saveButton: {
     height: 56,
     borderRadius: 12,
-    backgroundColor: "#005EA4",
+    backgroundColor: theme.primaryButtonBackground,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
 
-    shadowColor: "#005EA4",
+    shadowColor: theme.primary,
     shadowOpacity: 0.2,
     shadowRadius: 7,
     shadowOffset: {
@@ -512,7 +519,7 @@ const styles = StyleSheet.create({
   },
 
   saveButtonText: {
-    color: "#FFFFFF",
+    color: theme.white,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -521,8 +528,8 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#A8CCE5",
-    backgroundColor: "#FFFFFF",
+    borderColor: theme.infoBoxBorder,
+    backgroundColor: theme.cardBg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -530,13 +537,13 @@ const styles = StyleSheet.create({
   },
 
   securityButtonText: {
-    color: "#005EA4",
+    color: theme.secondary,
     fontSize: 15,
     fontWeight: "700",
   },
 
   updated: {
-    color: "#707783",
+    color: theme.textMuted,
     fontSize: 12,
     textAlign: "center",
   },

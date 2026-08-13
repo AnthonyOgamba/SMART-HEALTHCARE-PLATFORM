@@ -13,7 +13,9 @@ export function MedicationReminderProvider({ children }: PropsWithChildren) {
       .then(([medications, settings]) =>
         reconcileMedicationReminders(medications, settings?.medication_reminders ?? false),
       )
-      .catch((error) => console.error('Could not reconcile local medication reminders.', error));
+      .catch((error) => {
+        if (__DEV__) console.debug('[MedicationReminders] Reconciliation unavailable', error);
+      });
   }, [user]);
   return children;
 }

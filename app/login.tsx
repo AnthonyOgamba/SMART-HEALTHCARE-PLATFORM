@@ -1,0 +1,13 @@
+import { useRouter } from 'expo-router';
+import { useMemo,useState } from 'react';
+import { Pressable,StyleSheet,View } from 'react-native';
+import { ThemedText } from '@/components/themed-text';
+import { AuthFooterLink } from '@/components/ui/auth-footer-link';
+import { AuthLayout } from '@/components/ui/auth-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Palette, Spacing, type ThemeColors } from '@/constants/theme';
+import { signIn } from '@/lib/services/auth';
+const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export default function LoginScreen(){const router=useRouter(),theme=Palette.light,styles=useMemo(()=>makeStyles(theme),[theme]);const[email,setEmail]=useState(''),[password,setPassword]=useState(''),[show,setShow]=useState(false),[errors,setErrors]=useState<{email?:string;password?:string}>({}),[submitting,setSubmitting]=useState(false);const submit=async()=>{const next:{email?:string;password?:string}={};if(!email.trim())next.email='Email is required.';else if(!EMAIL.test(email.trim()))next.email='Enter a valid email address.';if(!password)next.password='Password is required.';setErrors(next);if(Object.keys(next).length)return;setSubmitting(true);try{await signIn(email,password);}catch{setErrors({password:'Email or password is incorrect.'});}finally{setSubmitting(false);}};return <AuthLayout title="Welcome Back" subtitle="Log in to continue managing your health journey." brandedMascot><Input label="Email" icon="mail-outline" placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} value={email} onChangeText={v=>{setEmail(v);setErrors(e=>({...e,email:undefined}));}} error={errors.email}/><Input label="Password" icon="lock-outline" placeholder="Password" secureTextEntry={!show} value={password} onChangeText={v=>{setPassword(v);setErrors(e=>({...e,password:undefined}));}} error={errors.password} rightIcon={show?'visibility-off':'visibility'} onRightIconPress={()=>setShow(v=>!v)} rightIconAccessibilityLabel={show?'Hide password':'Show password'}/><View style={styles.forgotRow}><Pressable accessibilityRole="link" onPress={()=>router.push('/forgot-password')}><ThemedText style={styles.forgotLink}>Forgot password?</ThemedText></Pressable></View><Button label="Log In" onPress={submit} loading={submitting}/><AuthFooterLink prompt="Don't have an account?" linkLabel="Create Account" onPress={()=>router.push('/signup')}/></AuthLayout>}
+const makeStyles=(theme:ThemeColors)=>StyleSheet.create({forgotRow:{alignItems:'flex-end',marginTop:-Spacing.xs},forgotLink:{fontSize:13,fontWeight:'600',color:theme.accent}});

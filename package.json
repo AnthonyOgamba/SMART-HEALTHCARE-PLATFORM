@@ -11,7 +11,10 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test:phase1": "node --test tests/phase1-foundation.test.mjs",
-    "test:phase2": "node --test tests/phase2-medications.test.mjs"
+    "test:phase2": "node --test tests/phase2-medications.test.mjs",
+    "test:phase3": "node --test tests/phase3-care-schedule.test.mjs",
+    "test:phase4": "node --test tests/phase4-local-ai.test.mjs",
+    "test:phase5": "node --test tests/phase5-wearables.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -29,6 +32,7 @@
     "expo-linking": "~8.0.12",
     "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.24",
+    "expo-sensors": "~15.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "expo-symbols": "~1.0.8",

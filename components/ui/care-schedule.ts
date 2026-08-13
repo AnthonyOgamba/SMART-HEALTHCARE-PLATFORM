@@ -1,0 +1,3 @@
+import{Brand,Radius,Spacing,Typography}from'@/constants/theme';
+export const CareTokens={background:Brand.screenBg,accent:Brand.primary,tint:Brand.backgroundWash,card:'#FFFFFF',border:Brand.cardBorder,radius:Radius.md,sectionGap:Spacing.md,title:Typography.h1,subtitle:Typography.caption,status:{taken:{text:'#2F6B41',bg:'#DFF3E4'},skipped:{text:'#B45309',bg:'#FAEEDA'},missed:{text:'#C62828',bg:'#FBE7E9'},pending:{text:'#5B6572',bg:'#EEF1F4'},upcoming:{text:Brand.primary,bg:Brand.backgroundWash},completed:{text:'#2F6B41',bg:'#DFF3E4'},scheduled:{text:Brand.primary,bg:Brand.backgroundWash},cancelled:{text:'#C62828',bg:'#FBE7E9'},recorded:{text:'#2F6B41',bg:'#DFF3E4'}}}as const;
+export const TAB_BAR_HEIGHT=88;

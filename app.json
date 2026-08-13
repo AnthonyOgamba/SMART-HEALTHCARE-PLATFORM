@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "smart-healthcare-mobile",
+    "name": "Genie Cares",
     "slug": "smart-healthcare-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/genie_app_image.png",
     "scheme": "smarthealthcaremobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "foregroundImage": "./assets/images/genie_app_image.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -27,20 +27,35 @@
     },
     "plugins": [
       "expo-router",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/alarm-clock-digital-beeping.wav",
+            "./assets/sounds/air-raid-siren-wailing-urgent.wav"
+          ]
+        }
+      ],
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/genie_app_image.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#F5FAFD",
           "dark": {
-            "backgroundColor": "#000000"
+            "image": "./assets/images/genie_app_image.png",
+            "backgroundColor": "#F5FAFD"
           }
         }
       ]
     ],
+    "extra": {
+      "bundledMedicationReminderSounds": [
+        "alarm-clock-digital-beeping.wav",
+        "air-raid-siren-wailing-urgent.wav"
+      ]
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

@@ -13,6 +13,7 @@ const homeScreen = readFileSync(new URL('../app/(tabs)/home.tsx', import.meta.ur
 const loginScreen = readFileSync(new URL('../app/index.tsx', import.meta.url), 'utf8');
 const signupScreen = readFileSync(new URL('../app/signup.tsx', import.meta.url), 'utf8');
 const profileProvider = readFileSync(new URL('../providers/profile-provider.tsx', import.meta.url), 'utf8');
+const profileService = readFileSync(new URL('../lib/services/profile.ts', import.meta.url), 'utf8');
 const securityHardening = readFileSync(
   new URL('../supabase/migrations/202608130003_security_definer_hardening.sql', import.meta.url),
   'utf8',
@@ -65,7 +66,7 @@ test('auth service covers every Phase 1 credential operation', () => {
 test('session provider protects private routes and restores sessions', () => {
   assert.match(provider, /getSession\(\)/);
   assert.match(provider, /onAuthStateChange/);
-  assert.match(provider, /if \(!session && !PUBLIC_ROUTES\.has\(root\)\) router\.replace\('\/'\)/);
+  assert.match(provider, /if \(!session && !PUBLIC_ROUTES\.has\(root\)\) router\.replace\('\/welcome'\)/);
   assert.match(client, /persistSession:\s*true/);
   assert.match(client, /AsyncStorage/);
 });
@@ -77,17 +78,23 @@ test('Home greeting uses the shared authenticated profile and local time', () =>
   assert.match(homeScreen, /profile\?\.full_name\.trim\(\)\.split/);
 });
 
-test('Sign In and Sign Up require Terms acceptance', () => {
-  for (const screen of [loginScreen, signupScreen]) {
-    assert.match(screen, /<TermsAgreement/);
-    assert.match(screen, /disabled=\{!termsAccepted\}/);
-  }
+test('Sign Up requires Terms acceptance while returning-user login does not', () => {
+  assert.doesNotMatch(readFileSync(new URL('../app/login.tsx', import.meta.url), 'utf8'), /TermsAgreement|termsAccepted/);
+  assert.match(signupScreen, /<TermsAgreement/);
+  assert.match(signupScreen, /disabled=\{!termsAccepted\}/);
 });
 
 test('shared profile state reads and persists the authenticated profile', () => {
   assert.match(profileProvider, /getProfile\(\)/);
   assert.match(profileProvider, /updateProfile\(values\)/);
   assert.match(profileProvider, /setProfile\(updated\)/);
+});
+
+test('profile updates explicitly target the authenticated owner', () => {
+  assert.match(profileService, /supabase\.auth\.getUser\(\)/);
+  assert.match(profileService, /\.update\(values\)[\s\S]*\.eq\('user_id', userId\)[\s\S]*\.single\(\)/);
+  assert.match(profileService, /ProfileUpdate = Database\['public'\]\['Tables'\]\['profiles'\]\['Update'\]/);
+  assert.match(migration, /profiles_update_own[\s\S]*auth\.uid\(\)[\s\S]*user_id/);
 });
 
 test('record_consent remains a restricted authenticated-only definer RPC', () => {

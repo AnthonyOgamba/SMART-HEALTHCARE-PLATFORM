@@ -31,6 +31,9 @@ const medication = (value: RawMedication): Medication => ({
   reminderSound: isMedicationReminderSound(value.reminder_sound)
     ? value.reminder_sound
     : DEFAULT_MEDICATION_REMINDER_SOUND,
+  supplyQuantity: value.supply_quantity === null || value.supply_quantity === undefined ? null : Number(value.supply_quantity),
+  unitsPerDose: value.units_per_dose === null || value.units_per_dose === undefined ? null : Number(value.units_per_dose),
+  supplyUnit: value.supply_unit ?? null, refillWarningDays: value.refill_warning_days ?? null, lastRefilledAt: value.last_refilled_at ?? null,
   active: value.active, archivedAt: value.archived_at, createdAt: value.created_at, updatedAt: value.updated_at,
 });
 const schedule = (value: RawMedication): MedicationSchedule => ({
@@ -50,13 +53,26 @@ function friendly(error: unknown): Error {
   if (/date range/i.test(message)) return new Error('Enter a valid date range.');
   return new Error('Medication data could not be saved. Please try again.');
 }
-async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
-  const callRpc = supabase.rpc as unknown as (
+export class MedicationRpcError extends Error {
+  readonly rpc: string;
+  readonly code?: string;
+  readonly details?: string;
+
+  constructor(rpcName: string, cause: unknown) {
+    const value = cause as { code?: string; message?: string; details?: string };
+    super(value?.message ?? 'Medication request failed.');
+    this.name = 'MedicationRpcError';
+    this.rpc = rpcName;
+    this.code = value?.code;
+    this.details = value?.details;
+  }
+}
+async function rpc<T>(name: string, args: Record<string, unknown>, preserveError = false): Promise<T> {
+  const { data, error } = await (supabase.rpc as unknown as (
     functionName: string,
     parameters: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: Error | null }>;
-  const { data, error } = await callRpc(name, args);
-  if (error) throw friendly(error);
+  ) => Promise<{ data: unknown; error: Error | null }>).call(supabase, name, args);
+  if (error) throw preserveError ? new MedicationRpcError(name, error) : friendly(error);
   return data as T;
 }
 const inputArgs = (value: MedicationInput) => ({
@@ -76,9 +92,13 @@ export async function updateMedication(id: string, input: MedicationInput) {
 }
 export const archiveMedication = (id: string) => rpc<RawMedication>('archive_medication', { p_medication_id: id });
 export async function getMedicationsForDate(date: string): Promise<MedicationDay> {
-  await rpc<number>('ensure_medication_logs_for_date', { p_date: date });
-  await rpc<number>('refresh_missed_medication_logs', {});
-  const raw = await rpc<any>('get_medications_for_date', { p_date: date });
+  await rpc<number>('ensure_medication_logs_for_date', { p_date: date }, true);
+  try {
+    await rpc<number>('refresh_missed_medication_logs', {}, true);
+  } catch (error) {
+    if (__DEV__) console.debug('[Medications] Missed-status refresh unavailable', error);
+  }
+  const raw = await rpc<any>('get_medications_for_date', { p_date: date }, true);
   return { date: raw.date, summary: raw.summary, items: raw.items.map((x: any) => ({ medication: medication(x.medication), schedule: x.schedule ? schedule(x.schedule) : null, log: log(x.log) })) };
 }
 export async function getMedicationDetails(id: string): Promise<MedicationDetails> {
@@ -97,6 +117,6 @@ export async function getMedicationHistory(from: string, to: string, medicationI
   });
 }
 export async function getActiveMedications() {
-  const raw = await rpc<Array<{ medication: RawMedication; schedules: RawMedication[] }>>('get_active_medications', {});
+  const raw = await rpc<Array<{ medication: RawMedication; schedules: RawMedication[] }>>('get_active_medications', {}, true);
   return raw.map((item) => ({ medication: medication(item.medication), schedules: item.schedules.map(schedule) }));
 }
