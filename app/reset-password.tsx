@@ -6,7 +6,7 @@ import { AuthLayout } from '@/components/ui/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
-import { updatePassword } from '@/lib/services/auth';
+import { signOut, updatePassword } from '@/lib/services/auth';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -30,8 +30,9 @@ export default function ResetPasswordScreen() {
     setError(undefined);
     try {
       await updatePassword(password);
+      await signOut();
       Alert.alert('Password Updated', 'Your password has been updated successfully.', [
-        { text: 'Continue', onPress: () => router.replace('/(tabs)/home') },
+        { text: 'Continue', onPress: () => router.replace('/login') },
       ]);
     } catch (submitError) {
       setError(
@@ -43,7 +44,7 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <AuthLayout title="Reset Password" subtitle="Choose a new password for your HealthNexus account.">
+    <AuthLayout title="Reset Password" subtitle="Choose a new password for your Genie Cares account.">
       <Input
         label="New Password"
         icon="lock-outline"

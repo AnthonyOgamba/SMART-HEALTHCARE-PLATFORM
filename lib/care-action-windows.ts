@@ -12,3 +12,18 @@ export function canConfirmAppointment(startsAt: string, now = new Date()) {
 export function canConfirmActivity(startsAt: string, now = new Date()) {
   return new Date(startsAt).getTime() <= now.getTime();
 }
+
+export function getCareScheduleActions(item:CareScheduleItem,now=new Date()):CareScheduleAction[]{
+  if(item.kind==='medication'&&item.status==='pending'&&item.actionId&&canConfirmMedication(item.startsAt,now))return[
+    {type:'medication_taken',label:'Taken',primary:true},{type:'medication_skip',label:'Skip'},
+  ];
+  if(item.kind==='activity'&&item.status==='scheduled'&&item.actionId&&canConfirmActivity(item.startsAt,now))return[
+    {type:'activity_complete',label:'Complete',primary:true},{type:'activity_skip',label:'Skip'},
+  ];
+  if(item.kind==='appointment'&&item.status==='scheduled'&&item.actionId&&canConfirmAppointment(item.startsAt,now))return[
+    ...(!item.attendanceConfirmedAt?[{type:'appointment_checkin' as const,label:"I'm Here",primary:true}]:[]),
+    {type:'appointment_complete',label:'Mark Completed',primary:Boolean(item.attendanceConfirmedAt)},
+  ];
+  return[];
+}
+import type { CareScheduleAction, CareScheduleItem } from '@/types';

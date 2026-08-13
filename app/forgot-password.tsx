@@ -44,7 +44,8 @@ export default function ForgotPasswordScreen() {
   return (
     <AuthLayout
       title="Forgot Password"
-      subtitle="Enter your email address and we'll send you a link to reset your password.">
+      subtitle="Enter your email address and we'll send you a link to reset your password."
+      brandedMascot>
       <Input
         label="Email"
         icon="mail-outline"
@@ -67,7 +68,7 @@ export default function ForgotPasswordScreen() {
       <AuthFooterLink
         prompt="Remembered your password?"
         linkLabel="Return to Login"
-        onPress={() => router.push('/')}
+        onPress={() => router.replace('/login')}
       />
     </AuthLayout>
   );

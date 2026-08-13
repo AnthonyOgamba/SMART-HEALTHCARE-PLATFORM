@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { usePalette, type ThemePalette } from '@/hooks/use-palette';
+import { useScopedPalette } from '@/components/ui/auth-theme-context';
+import type { ThemePalette } from '@/hooks/use-palette';
 
 export interface AuthFooterLinkProps {
   prompt: string;
@@ -12,7 +13,7 @@ export interface AuthFooterLinkProps {
 
 /** "Already have an account? Login" style footer used on every auth screen. */
 export function AuthFooterLink({ prompt, linkLabel, onPress }: AuthFooterLinkProps) {
-  const theme = usePalette();
+  const theme = useScopedPalette();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.row}>

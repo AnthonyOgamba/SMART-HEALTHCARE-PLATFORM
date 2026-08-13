@@ -28,7 +28,7 @@ export default function HealthLogScreen() {
         </View>
 
         <View style={styles.summaryContent}>
-          <Text style={styles.summaryLabel}>AI WELLNESS SUMMARY</Text>
+          <Text style={styles.summaryLabel}>GENIE CARES WELLNESS SUMMARY</Text>
 
           <Text style={styles.summaryTitle}>Your recent health activity</Text>
 
@@ -98,7 +98,7 @@ export default function HealthLogScreen() {
           </View>
 
           <View style={styles.aiHeaderText}>
-            <Text style={styles.aiTitle}>AI Pattern Insight</Text>
+            <Text style={styles.aiTitle}>Genie Cares Pattern Insight</Text>
 
             <Text style={styles.aiSubtitle}>Based on your recent logs</Text>
           </View>
@@ -116,7 +116,7 @@ export default function HealthLogScreen() {
         >
           <MaterialIcons name="auto-awesome" size={20} color="#FFFFFF" />
 
-          <Text style={styles.aiButtonText}>Ask AI About My Health Log</Text>
+          <Text style={styles.aiButtonText}>Ask Genie Cares About My Health Log</Text>
         </Pressable>
       </View>
 

@@ -7,11 +7,14 @@ import { CareTokens } from '@/components/ui/care-schedule';
 import { QuickAddSheet } from '@/components/ui/quick-add-sheet';
 import { EmptyState, LoadingState, ScreenContainer } from '@/components/ui/screen-states';
 import { getCareSchedule, localDate } from '@/lib/services/care-schedule';
+import { usePalette, type ThemePalette } from '@/hooks/use-palette';
 import type { CareScheduleItem } from '@/types';
 
 export default function Calendar() {
   const params = useLocalSearchParams<{ date?: string }>();
   const router = useRouter();
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [selected, setSelected] = useState(params.date ?? localDate());
   const [month, setMonth] = useState(() => new Date(`${params.date ?? localDate()}T12:00:00`));
   const [items, setItems] = useState<CareScheduleItem[] | null>(null);
@@ -45,9 +48,9 @@ export default function Calendar() {
   };
 
   return <ScreenContainer contentContainerStyle={styles.content}>
-    <View style={styles.header}><Pressable accessibilityLabel="Go back" style={styles.iconButton} onPress={() => router.back()}><MaterialIcons name="arrow-back" size={24} color={CareTokens.accent} /></Pressable><Text style={styles.title}>Care Calendar</Text></View>
+    <View style={styles.header}><Pressable accessibilityLabel="Go back" style={styles.iconButton} onPress={() => router.back()}><MaterialIcons name="arrow-back" size={24} color={theme.primary} /></Pressable><Text style={styles.title}>Care Calendar</Text></View>
     <View style={styles.calendarCard}>
-      <View style={styles.month}><Pressable accessibilityLabel="Previous month" style={styles.iconButton} onPress={() => changeMonth(-1)}><MaterialIcons name="chevron-left" size={25} color={CareTokens.accent} /></Pressable><Text style={styles.monthTitle}>{month.toLocaleDateString([], { month: 'long', year: 'numeric' })}</Text><Pressable accessibilityLabel="Next month" style={styles.iconButton} onPress={() => changeMonth(1)}><MaterialIcons name="chevron-right" size={25} color={CareTokens.accent} /></Pressable></View>
+      <View style={styles.month}><Pressable accessibilityLabel="Previous month" style={styles.iconButton} onPress={() => changeMonth(-1)}><MaterialIcons name="chevron-left" size={25} color={theme.primary} /></Pressable><Text style={styles.monthTitle}>{month.toLocaleDateString([], { month: 'long', year: 'numeric' })}</Text><Pressable accessibilityLabel="Next month" style={styles.iconButton} onPress={() => changeMonth(1)}><MaterialIcons name="chevron-right" size={25} color={theme.primary} /></Pressable></View>
       <View style={styles.week}>{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((label, index) => <Text key={index} style={styles.weekText}>{label}</Text>)}</View>
       <View style={styles.grid}>{days.map((day, index) => {
         if (!day) return <View key={`empty-${index}`} style={styles.dayCell} />;
@@ -62,14 +65,14 @@ export default function Calendar() {
   </ScreenContainer>;
 }
 
-const styles = StyleSheet.create({
-  content: { paddingHorizontal: 18, paddingTop: 20, gap: 16, backgroundColor: CareTokens.background },
+const makeStyles = (theme: ThemePalette) => StyleSheet.create({
+  content: { paddingHorizontal: 18, paddingTop: 20, gap: 16, backgroundColor: theme.screenBg },
   header: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 }, iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 25, fontWeight: '700', color: CareTokens.accent }, calendarCard: { padding: 12, borderRadius: CareTokens.radius, borderWidth: 1, borderColor: CareTokens.border, backgroundColor: CareTokens.card },
-  month: { minHeight: 44, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, monthTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: CareTokens.accent },
-  week: { flexDirection: 'row', marginTop: 4, marginBottom: 4 }, weekText: { width: '14.285%', textAlign: 'center', color: '#5B6572', fontWeight: '700' }, grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 },
-  dayCell: { width: '14.285%', height: 44, alignItems: 'center', justifyContent: 'center' }, dayCircle: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' }, selectedDay: { backgroundColor: CareTokens.accent },
-  dayText: { color: '#1A202C', lineHeight: 18 }, selectedText: { color: '#FFF', fontWeight: '700' }, dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#9AA5B1', marginTop: 2 }, selectedDot: { backgroundColor: '#FFF' },
-  selectedHeader: { minHeight: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }, section: { flex: 1, fontSize: 18, fontWeight: '700', color: '#1A202C' }, add: { color: CareTokens.accent, fontWeight: '700' },
-  group: { gap: 8 }, groupTitle: { fontSize: 11, fontWeight: '700', color: '#5B6572' }, itemCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, backgroundColor: '#FFF', borderRadius: CareTokens.radius, borderWidth: 1, borderColor: CareTokens.border }, time: { width: 62, fontWeight: '700', fontSize: 11 }, itemText: { flex: 1 }, cardTitle: { fontWeight: '700', color: '#1A202C' }, muted: { color: '#5B6572', fontSize: 11 }, errorCard: { padding: 18, gap: 6, borderRadius: CareTokens.radius, backgroundColor: '#FFF', borderWidth: 1, borderColor: CareTokens.border },
+  title: { fontSize: 25, fontWeight: '700', color: theme.primary }, calendarCard: { padding: 12, borderRadius: CareTokens.radius, borderWidth: 1, borderColor: theme.cardBorder, backgroundColor: theme.cardBg },
+  month: { minHeight: 44, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, monthTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: theme.primary },
+  week: { flexDirection: 'row', marginTop: 4, marginBottom: 4 }, weekText: { width: '14.285%', textAlign: 'center', color: theme.textSecondary, fontWeight: '700' }, grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 },
+  dayCell: { width: '14.285%', height: 44, alignItems: 'center', justifyContent: 'center' }, dayCircle: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' }, selectedDay: { backgroundColor: theme.primary },
+  dayText: { color: theme.textPrimary, lineHeight: 18 }, selectedText: { color: theme.white, fontWeight: '700' }, dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: theme.iconMuted, marginTop: 2 }, selectedDot: { backgroundColor: theme.white },
+  selectedHeader: { minHeight: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }, section: { flex: 1, fontSize: 18, fontWeight: '700', color: theme.textPrimary }, add: { color: theme.secondary, fontWeight: '700' },
+  group: { gap: 8 }, groupTitle: { fontSize: 11, fontWeight: '700', color: theme.textSecondary }, itemCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, backgroundColor: theme.cardBg, borderRadius: CareTokens.radius, borderWidth: 1, borderColor: theme.cardBorder }, time: { width: 62, fontWeight: '700', fontSize: 11, color: theme.textPrimary }, itemText: { flex: 1 }, cardTitle: { fontWeight: '700', color: theme.textPrimary }, muted: { color: theme.textSecondary, fontSize: 11 }, errorCard: { padding: 18, gap: 6, borderRadius: CareTokens.radius, backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder },
 });

@@ -16,7 +16,7 @@ export default function ResetSuccessScreen() {
 
   return (
     <AuthLayout
-      title="Success!"
+      title="Check Your Email"
       subtitle="If an account exists for that email, a password reset link has been sent. Open the link on this device to choose a new password."
       style={styles.card}>
       <View style={styles.checkCircle}>
@@ -28,9 +28,9 @@ export default function ResetSuccessScreen() {
 
       <View style={styles.buttonWrap}>
         <Button
-          label="Return to Login"
+          label="Back to Login"
           icon="arrow-forward"
-          onPress={() => router.replace('/')}
+          onPress={() => router.replace('/login')}
         />
       </View>
     </AuthLayout>

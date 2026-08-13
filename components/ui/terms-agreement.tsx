@@ -3,21 +3,24 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { useScopedPalette } from '@/components/ui/auth-theme-context';
 import { Spacing } from '@/constants/theme';
-import { usePalette, type ThemePalette } from '@/hooks/use-palette';
+import type { ThemePalette } from '@/hooks/use-palette';
 
 export function TermsAgreement({
   accepted,
   onAcceptedChange,
   onTermsPress,
+  onPrivacyPress,
   error,
 }: {
   accepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
   onTermsPress: () => void;
+  onPrivacyPress?: () => void;
   error?: string;
 }) {
-  const theme = usePalette();
+  const theme = useScopedPalette();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
@@ -36,6 +39,7 @@ export function TermsAgreement({
         <Pressable accessibilityRole="link" onPress={onTermsPress}>
           <ThemedText style={styles.link}>Terms & Conditions</ThemedText>
         </Pressable>
+        {onPrivacyPress ? <><ThemedText style={styles.label}> and </ThemedText><Pressable accessibilityRole="link" onPress={onPrivacyPress}><ThemedText style={styles.link}>Privacy Policy</ThemedText></Pressable></> : null}
       </View>
       {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
     </View>

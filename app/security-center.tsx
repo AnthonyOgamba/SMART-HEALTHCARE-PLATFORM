@@ -1,14 +1,16 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
 import { PageBanner } from "@/components/ui/page-banner";
-import { Brand } from "@/constants/theme";
+import { usePalette, type ThemePalette } from '@/hooks/use-palette';
 
 export default function SecurityCenterScreen() {
   const router = useRouter();
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [hideSensitiveNotifications, setHideSensitiveNotifications] =
     useState(true);
@@ -19,7 +21,7 @@ export default function SecurityCenterScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
+          <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Security Center</Text>
@@ -35,8 +37,8 @@ export default function SecurityCenterScreen() {
           title="Secure Authentication"
           description="Access to personal health information requires an authenticated account."
           status="Required"
-          statusColor={Brand.primary}
-          statusBackground={Brand.backgroundWash}
+          statusColor={theme.primary}
+          statusBackground={theme.backgroundWash}
         />
 
         <View style={styles.divider} />
@@ -46,8 +48,8 @@ export default function SecurityCenterScreen() {
           title="Password Protection"
           description="Account credentials are managed separately from health information."
           status="Enabled"
-          statusColor={Brand.primary}
-          statusBackground={Brand.backgroundWash}
+          statusColor={theme.primary}
+          statusBackground={theme.backgroundWash}
         />
 
         <View style={styles.divider} />
@@ -57,8 +59,8 @@ export default function SecurityCenterScreen() {
           title="Session Protection"
           description="Users should sign out on shared devices and inactive sessions should expire."
           status="Important"
-          statusColor={Brand.primary}
-          statusBackground={Brand.backgroundWash}
+          statusColor={theme.primary}
+          statusBackground={theme.backgroundWash}
         />
       </View>
 
@@ -102,7 +104,7 @@ export default function SecurityCenterScreen() {
         <ProtectionCard
           icon="check-circle"
           title="Input Validation"
-          text="User and AI inputs should be validated before processing or storage."
+          text="User and Genie Cares inputs should be validated before processing or storage."
         />
 
         <ProtectionCard
@@ -112,59 +114,40 @@ export default function SecurityCenterScreen() {
         />
       </View>
 
-      <Text style={styles.sectionLabel}>AI SAFETY</Text>
+      <Text style={styles.sectionLabel}>GENIE CARES SAFETY</Text>
 
       <View style={styles.aiSafetyCard}>
         <View style={styles.aiHeader}>
           <View style={styles.aiIcon}>
-            <MaterialIcons name="psychology" size={25} color={Brand.primary} />
+            <MaterialIcons name="psychology" size={25} color={theme.primary} />
           </View>
 
           <View style={styles.aiHeaderText}>
-            <Text style={styles.aiTitle}>Safe AI Health Guidance</Text>
+            <Text style={styles.aiTitle}>Safe Genie Cares Health Guidance</Text>
 
             <Text style={styles.aiSubtitle}>
-              Additional safeguards for health-related AI
+              Additional safeguards for Genie Cares health guidance
             </Text>
           </View>
         </View>
 
-        <SafetyPoint text="AI responses should provide guidance, not claim to diagnose the patient." />
+        <SafetyPoint text="Genie Cares responses should provide guidance, not claim to diagnose the patient." />
 
         <SafetyPoint text="Emergency or red-flag symptoms should direct users to emergency services or professional care." />
 
-        <SafetyPoint text="AI should not tell users to stop or change prescribed medication without professional advice." />
+        <SafetyPoint text="Genie Cares should not tell users to stop or change prescribed medication without professional advice." />
 
-        <SafetyPoint text="AI access to personal health information should depend on user consent." />
+        <SafetyPoint text="Genie Cares access to personal health information should depend on user consent." />
       </View>
 
       <Text style={styles.sectionLabel}>PRIVACY CONTROLS</Text>
 
       <Pressable
         style={styles.navCard}
-        onPress={() => router.push("/consent-management" as never)}
-      >
-        <View style={styles.navIconGreen}>
-          <MaterialIcons name="fact-check" size={24} color={Brand.primary} />
-        </View>
-
-        <View style={styles.navContent}>
-          <Text style={styles.navTitle}>Consent Management</Text>
-
-          <Text style={styles.navText}>
-            Review permissions for AI and health-data use.
-          </Text>
-        </View>
-
-        <MaterialIcons name="chevron-right" size={25} color="#858B94" />
-      </Pressable>
-
-      <Pressable
-        style={styles.navCard}
         onPress={() => router.push("/privacy-policy" as never)}
       >
         <View style={styles.navIconBlue}>
-          <MaterialIcons name="privacy-tip" size={24} color={Brand.primary} />
+          <MaterialIcons name="privacy-tip" size={24} color={theme.primary} />
         </View>
 
         <View style={styles.navContent}>
@@ -175,11 +158,11 @@ export default function SecurityCenterScreen() {
           </Text>
         </View>
 
-        <MaterialIcons name="chevron-right" size={25} color="#858B94" />
+        <MaterialIcons name="chevron-right" size={25} color={theme.iconMuted} />
       </Pressable>
 
       <View style={styles.reminderCard}>
-        <MaterialIcons name="info-outline" size={21} color={Brand.primary} />
+        <MaterialIcons name="info-outline" size={21} color={theme.primary} />
 
         <Text style={styles.reminderText}>
           Frontend controls are only one layer of security. Authentication,
@@ -207,10 +190,12 @@ function SecurityItem({
   statusColor: string;
   statusBackground: string;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.securityRow}>
       <View style={styles.securityIcon}>
-        <MaterialIcons name={icon} size={22} color={Brand.primary} />
+        <MaterialIcons name={icon} size={22} color={theme.primary} />
       </View>
 
       <View style={styles.securityInfo}>
@@ -255,10 +240,12 @@ function ToggleSecurityRow({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.securityRow}>
       <View style={styles.securityIcon}>
-        <MaterialIcons name={icon} size={22} color={Brand.primary} />
+        <MaterialIcons name={icon} size={22} color={theme.primary} />
       </View>
 
       <View style={styles.securityInfo}>
@@ -271,8 +258,8 @@ function ToggleSecurityRow({
         value={value}
         onValueChange={onValueChange}
         trackColor={{
-          false: "#C8CDD3",
-          true: Brand.primary,
+          false: theme.disabledBackground,
+          true: theme.primary,
         }}
         thumbColor="#FFFFFF"
       />
@@ -289,10 +276,12 @@ function ProtectionCard({
   title: string;
   text: string;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.protectionCard}>
       <View style={styles.protectionIcon}>
-        <MaterialIcons name={icon} size={23} color={Brand.primary} />
+        <MaterialIcons name={icon} size={23} color={theme.primary} />
       </View>
 
       <Text style={styles.protectionTitle}>{title}</Text>
@@ -303,21 +292,23 @@ function ProtectionCard({
 }
 
 function SafetyPoint({ text }: { text: string }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.safetyPoint}>
-      <MaterialIcons name="check-circle" size={19} color={Brand.primary} />
+      <MaterialIcons name="check-circle" size={19} color={theme.primary} />
 
       <Text style={styles.safetyPointText}>{text}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   content: {
     padding: 18,
     paddingBottom: 110,
     gap: 14,
-    backgroundColor: "#F7F9FB",
+    backgroundColor: theme.screenBg,
   },
 
   header: {
@@ -333,14 +324,14 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: Brand.primary,
+    color: theme.accent,
     fontSize: 24,
     fontWeight: "700",
   },
 
   heroCard: {
     alignItems: "center",
-    backgroundColor: Brand.primary,
+    backgroundColor: theme.primary,
     borderRadius: 18,
     padding: 24,
   },
@@ -371,7 +362,7 @@ const styles = StyleSheet.create({
   },
 
   sectionLabel: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.8,
@@ -379,9 +370,9 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E1E5E9",
+    borderColor: theme.cardBorder,
     borderRadius: 16,
     paddingHorizontal: 15,
   },
@@ -398,7 +389,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: theme.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -408,13 +399,13 @@ const styles = StyleSheet.create({
   },
 
   securityTitle: {
-    color: "#191C1E",
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: "700",
   },
 
   securityDescription: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 10,
     lineHeight: 15,
     marginTop: 3,
@@ -433,7 +424,7 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "#EDF0F2",
+    backgroundColor: theme.cardBorder,
   },
 
   protectionGrid: {
@@ -445,9 +436,9 @@ const styles = StyleSheet.create({
   protectionCard: {
     width: "48.5%",
     minHeight: 145,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E1E5E9",
+    borderColor: theme.cardBorder,
     borderRadius: 15,
     padding: 14,
   },
@@ -456,29 +447,29 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#E4F0FA",
+    backgroundColor: theme.blueTint,
     alignItems: "center",
     justifyContent: "center",
   },
 
   protectionTitle: {
-    color: "#191C1E",
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: "700",
     marginTop: 10,
   },
 
   protectionText: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 10,
     lineHeight: 15,
     marginTop: 5,
   },
 
   aiSafetyCard: {
-    backgroundColor: Brand.backgroundWash,
+    backgroundColor: theme.backgroundWash,
     borderWidth: 1,
-    borderColor: Brand.infoBoxBorder,
+    borderColor: theme.infoBoxBorder,
     borderRadius: 16,
     padding: 17,
     gap: 13,
@@ -494,7 +485,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Brand.infoBoxBg,
+    backgroundColor: theme.infoBoxBg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -504,13 +495,13 @@ const styles = StyleSheet.create({
   },
 
   aiTitle: {
-    color: Brand.primary,
+    color: theme.secondary,
     fontSize: 16,
     fontWeight: "700",
   },
 
   aiSubtitle: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 10,
     marginTop: 2,
   },
@@ -523,7 +514,7 @@ const styles = StyleSheet.create({
 
   safetyPointText: {
     flex: 1,
-    color: "#444653",
+    color: theme.textSecondary,
     fontSize: 12,
     lineHeight: 18,
   },
@@ -533,9 +524,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E1E5E9",
+    borderColor: theme.cardBorder,
     borderRadius: 15,
     padding: 14,
   },
@@ -544,7 +535,7 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 12,
-    backgroundColor: Brand.backgroundWash,
+    backgroundColor: theme.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -553,7 +544,7 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 12,
-    backgroundColor: "#E4F0FA",
+    backgroundColor: theme.blueTint,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -563,13 +554,13 @@ const styles = StyleSheet.create({
   },
 
   navTitle: {
-    color: "#191C1E",
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: "700",
   },
 
   navText: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 10,
     lineHeight: 15,
     marginTop: 2,
@@ -579,7 +570,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    backgroundColor: "#EEF6FB",
+    backgroundColor: theme.infoBoxBg,
     borderRadius: 13,
     padding: 15,
     marginTop: 3,
@@ -587,7 +578,7 @@ const styles = StyleSheet.create({
 
   reminderText: {
     flex: 1,
-    color: "#59616D",
+    color: theme.infoBoxText,
     fontSize: 11,
     lineHeight: 17,
   },

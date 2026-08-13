@@ -8,6 +8,7 @@ import { ProfileProvider } from '@/providers/profile-provider';
 import { MedicationReminderProvider } from '@/providers/medication-reminder-provider';
 import { AppointmentReminderProvider } from '@/providers/appointment-reminder-provider';
 import { AppearanceProvider, useAppearance } from '@/providers/appearance-provider';
+import { NotificationNavigationProvider } from '@/providers/notification-navigation-provider';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -23,18 +24,23 @@ function RootNavigator() {
     <>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="welcome" />
+      <Stack.Screen name="login" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="signup" options={{headerShown:true,title:'Create Account',headerTintColor:'#1B4F72'}} />
-      <Stack.Screen name="forgot-password" options={{headerShown:true,title:'Reset Password',headerTintColor:'#1B4F72'}} />
-      <Stack.Screen name="reset-password" options={{headerShown:true,title:'Choose Password',headerTintColor:'#1B4F72'}} />
-      <Stack.Screen name="reset-success" options={{headerShown:true,title:'Password Updated',headerTintColor:'#1B4F72'}} />
+      <Stack.Screen name="signup" />
+      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="reset-password" />
+      <Stack.Screen name="reset-success" />
       <Stack.Screen name="notifications" />
+      <Stack.Screen name="connected-health" />
+      <Stack.Screen name="device-activity" />
       <Stack.Screen name="settings" />
       <Stack.Screen name="privacy-policy" />
       <Stack.Screen name="terms-and-conditions" />
       <Stack.Screen name="consent-management" />
       <Stack.Screen name="security-center" />
       <Stack.Screen name="change-password" />
+      <Stack.Screen name="onboarding" />
     </Stack>
     <StatusBar style={appearance === 'dark' ? 'light' : 'dark'} />
     </>
@@ -47,7 +53,7 @@ export default function RootLayout() {
       <AppearanceProvider>
         <ProfileProvider>
           <MedicationReminderProvider>
-            <AppointmentReminderProvider><RootNavigator /></AppointmentReminderProvider>
+            <AppointmentReminderProvider><NotificationNavigationProvider><RootNavigator /></NotificationNavigationProvider></AppointmentReminderProvider>
           </MedicationReminderProvider>
         </ProfileProvider>
       </AppearanceProvider>

@@ -27,7 +27,7 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: '3. Data Usage',
-    body: 'HealthNexus uses the collected data for various purposes: to provide and maintain our service, to notify you about changes to our service, to provide AI-driven health insights, and to provide customer support.',
+    body: 'Genie Cares uses collected data to provide and maintain the service, notify you about service changes, provide requested Genie Cares health insights, and provide customer support.',
   },
   {
     heading: '4. Your Rights',

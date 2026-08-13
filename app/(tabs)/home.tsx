@@ -1,10 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { MyDaySummaryModal } from '@/components/my-day-summary-modal';
 import { ErrorState, LoadingState, ScreenContainer } from '@/components/ui/screen-states';
 import { SectionHeader } from '@/components/ui/section-header';
 import { SurfaceCard } from '@/components/ui/surface-card';
@@ -14,6 +14,10 @@ import { getHomeDashboard, type HomeDashboard } from '@/lib/services/home-dashbo
 import { recordMedicationSkipped, recordMedicationTaken } from '@/lib/services/medications';
 import { canConfirmMedication } from '@/lib/care-action-windows';
 import { useProfile } from '@/providers/profile-provider';
+import { summarizeMyDay } from '@/lib/services/ai-care';
+import { usePhoneActivity } from '@/hooks/use-phone-activity';
+import { PhoneActivityPermissionModal } from '@/components/phone-activity-permission-modal';
+import { healthService } from '@/lib/health/health-service';
 
 const formatTime = (value: string) => new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 const formatDateTime = (value: string) => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(value));
@@ -30,6 +34,10 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [myDaySummary, setMyDaySummary] = useState<string>();
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const { snapshot: phoneActivity, availability: phoneAvailability, loading: phoneActivityLoading } = usePhoneActivity();
+  const [showActivityPermission, setShowActivityPermission] = useState(false);
 
   const load = useCallback(async () => {
     if (loaded.current) setRefreshing(true);
@@ -70,6 +78,7 @@ export default function DashboardScreen() {
     catch { setError('Could not update the medication reminder.'); }
     finally { setCheckingIn(false); }
   };
+  const summarizeDay = async () => { if(summaryLoading)return;setSummaryLoading(true);try { const result = await summarizeMyDay(); setMyDaySummary(result.summary); } catch { Alert.alert('Genie Cares Unavailable', 'Check Genie Cares settings and consent, then try again.'); } finally {setSummaryLoading(false);} };
 
   return (
     <ScreenContainer
@@ -90,6 +99,15 @@ export default function DashboardScreen() {
       {error ? <View accessibilityRole="alert" style={styles.notice}><ThemedText style={styles.noticeText}>{error} Pull down to try again.</ThemedText></View> : null}
 
       <SectionHeader label="TODAY AT A GLANCE" />
+      <Pressable onPress={() => phoneAvailability === 'permission_required' ? setShowActivityPermission(true) : router.push('/device-activity' as never)}><SurfaceCard style={styles.deviceActivityCard}>
+        <View style={styles.deviceActivityIcon}><MaterialIcons name="directions-walk" size={25} color={theme.primary} /></View>
+        <View style={styles.grow}>
+          <ThemedText style={styles.deviceActivityLabel}>TODAY&apos;S ACTIVITY</ThemedText>
+          <ThemedText style={styles.deviceActivityValue}>{phoneActivityLoading ? 'Loading…' : phoneActivity?.steps === null || phoneActivity?.steps === undefined ? '—' : phoneActivity.steps.toLocaleString()}</ThemedText>
+          <ThemedText style={styles.deviceActivityUnit}>Steps</ThemedText>
+          <ThemedText style={styles.cardDetail}>{phoneAvailability === 'available' ? 'Source: This device' : phoneAvailability === 'permission_required' ? 'Tap to connect Phone Activity.' : 'Step tracking is not available on this device.'}</ThemedText>
+        </View>
+      </SurfaceCard></Pressable>
       <View style={styles.grid}>
         <SummaryCard icon="medication" label="Medications" value={data?.medications.progressPercentage === null ? 'No doses due yet' : `${data?.medications.takenDue ?? 0} of ${data?.medications.due ?? 0} due doses taken`} detail={(data?.medications.futureToday ?? 0) > 0 ? `${data!.medications.futureToday} scheduled later today` : 'No medications scheduled later today'} theme={theme} styles={styles} onPress={() => router.push('/(tabs)/appointments')} />
         <SummaryCard icon="event" label="Next appointment" value={appointment ? formatDateTime(appointment.startsAt) : 'No upcoming appointments'} theme={theme} styles={styles} onPress={() => router.push(appointment ? `/appointment-details?id=${appointment.id}` : '/add-appointment')} />
@@ -119,10 +137,9 @@ export default function DashboardScreen() {
         {comingUp.length ? comingUp.map(item => <AttentionRow key={item.key} icon={item.icon} text={`${item.title} — ${item.detail}`} onPress={() => router.push(item.route as never)} theme={theme} styles={styles} />) : <ThemedText style={styles.subtle}>Nothing else scheduled for today.</ThemedText>}
       </SurfaceCard>
 
-      <LinearGradient colors={[theme.primary, theme.secondary]} style={styles.aiBanner}>
-        <View style={styles.grow}><ThemedText style={styles.aiTitle}>Need health guidance?</ThemedText><ThemedText style={styles.aiText}>Open AI Care for informational support.</ThemedText></View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open AI Care" onPress={() => router.push('/(tabs)/assistant')} style={styles.aiButton}><MaterialIcons name="arrow-forward" size={21} color={theme.primary} /></Pressable>
-      </LinearGradient>
+      <View style={styles.myDayCard}><View style={styles.myDayIcon}><MaterialIcons name="auto-awesome" size={24} color={theme.primary}/></View><View style={styles.grow}><ThemedText style={styles.myDayTitle}>My Day</ThemedText><ThemedText style={styles.myDaySubtitle}>Your AI-generated care summary</ThemedText><ThemedText style={styles.myDayDescription}>Get a quick overview of your medications, activities, sleep, and appointments.</ThemedText><Pressable disabled={summaryLoading} accessibilityRole="button" accessibilityLabel="View My Day Summary" onPress={()=>void summarizeDay()} style={styles.myDayButton}><ThemedText style={styles.myDayButtonText}>{summaryLoading?'Generating…':'View My Day Summary'}</ThemedText></Pressable></View></View>
+      <MyDaySummaryModal visible={!!myDaySummary} summary={myDaySummary??''} onClose={()=>setMyDaySummary(undefined)} onFollowUp={()=>{setMyDaySummary(undefined);router.push('/(tabs)/assistant')}}/>
+      <PhoneActivityPermissionModal visible={showActivityPermission} onClose={()=>setShowActivityPermission(false)} onAllow={()=>{setShowActivityPermission(false);void healthService.connectPhoneActivity();}} />
     </ScreenContainer>
   );
 }
@@ -151,5 +168,6 @@ const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   attentionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.cardBorder }, attentionText: { flex: 1, color: theme.textPrimary, fontSize: 13 },
   checkInRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.sm }, checkInPrimary: { flex: 1, minHeight: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.primary }, checkInPrimaryText: { color: theme.white, fontWeight: '700' }, checkInSecondary: { flex: 1, minHeight: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.secondary }, checkInSecondaryText: { color: theme.secondary, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: Spacing.xs }, quickAction: { flex: 1, minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: Radius.md, backgroundColor: theme.selectedBackground }, quickLabel: { color: theme.primary, fontSize: 11, fontWeight: '700' },
-  aiBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderRadius: Radius.lg, padding: Spacing.md }, aiTitle: { color: theme.white, fontWeight: '700', fontSize: 15 }, aiText: { color: theme.white, opacity: 0.9, fontSize: 12 }, aiButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.white, alignItems: 'center', justifyContent: 'center' },
+  deviceActivityCard: { flexDirection: 'row', alignItems: 'center' }, deviceActivityIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.selectedBackground }, deviceActivityLabel: { color: theme.textSecondary, fontSize: 11, fontWeight: '800', letterSpacing: 0.7 }, deviceActivityValue: { color: theme.primary, fontSize: 28, lineHeight: 33, fontWeight: '800' }, deviceActivityUnit: { color: theme.textPrimary, fontSize: 13, fontWeight: '700' },
+  myDayCard:{flexDirection:'row',alignItems:'flex-start',gap:Spacing.md,padding:Spacing.lg,borderRadius:Radius.lg,backgroundColor:theme.selectedBackground,borderWidth:1,borderColor:theme.infoBoxBorder},myDayIcon:{width:46,height:46,borderRadius:23,alignItems:'center',justifyContent:'center',backgroundColor:theme.cardBg},myDayTitle:{fontSize:20,fontWeight:'800',color:theme.primary},myDaySubtitle:{fontSize:13,fontWeight:'700',color:theme.secondary},myDayDescription:{fontSize:13,lineHeight:19,color:theme.textSecondary,marginTop:4},myDayButton:{alignSelf:'flex-start',marginTop:12,minHeight:44,paddingHorizontal:16,borderRadius:12,backgroundColor:theme.primary,alignItems:'center',justifyContent:'center'},myDayButtonText:{color:theme.white,fontWeight:'800',fontSize:14},
 });

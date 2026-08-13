@@ -8,6 +8,7 @@ import { Brand } from '@/constants/theme';
 import { canConfirmAppointment } from '@/lib/care-action-windows';
 import { cancelAppointment, completeAppointment, confirmAppointmentAttendance, getAppointmentDetails } from '@/lib/services/appointments';
 import { cancelAppointmentReminder } from '@/lib/services/local-appointment-reminders';
+import { prepareForAppointment } from '@/lib/services/ai-care';
 import type { CareAppointment } from '@/types';
 
 export default function AppointmentDetails() {
@@ -28,10 +29,12 @@ export default function AppointmentDetails() {
     } catch { Alert.alert('Could Not Update Appointment', 'Please try again.'); }
   };
   const checkInAvailable = canConfirmAppointment(appointment.startsAt);
+  const prepare = async () => { try { const result = await prepareForAppointment(id); Alert.alert('Appointment Preparation', result.summary); } catch { Alert.alert('Genie Cares Unavailable', 'Check Genie Cares settings and consent, then try again.'); } };
   return <ScreenContainer style={styles.content}>
     <View style={styles.header}><Pressable accessibilityLabel="Go back" onPress={() => router.back()}><MaterialIcons name="arrow-back" size={24} color={Brand.primary} /></Pressable><Text style={styles.title}>{appointment.title}</Text></View>
     <View style={styles.card}><Row label="Provider" value={appointment.providerName ?? 'Not specified'} /><Row label="Practitioner type" value={appointment.practitionerType ?? 'Not specified'} /><Row label="When" value={new Date(appointment.startsAt).toLocaleString()} /><Row label="Location" value={appointment.location ?? 'Not specified'} /><Row label="Status" value={appointment.status} /><Text style={styles.note}>This confirmation is for your personal Care Schedule. It does not contact or check you into a provider.</Text></View>
     {appointment.status === 'scheduled' ? <>
+      <Pressable style={styles.primary} onPress={() => void prepare()}><Text style={styles.white}>Prepare with Genie Cares</Text></Pressable>
       <Pressable style={styles.primary} onPress={() => router.push({ pathname: '/add-appointment', params: { id } })}><Text style={styles.white}>Edit Appointment</Text></Pressable>
       {checkInAvailable && !appointment.attendanceConfirmedAt ? <Pressable style={styles.secondary} onPress={() => action('confirm')}><Text>I&apos;m Here</Text></Pressable> : null}
       {checkInAvailable ? <Pressable style={styles.secondary} onPress={() => action('complete')}><Text>Mark Completed</Text></Pressable> : <Text style={styles.note}>Check-in becomes available shortly before the appointment.</Text>}

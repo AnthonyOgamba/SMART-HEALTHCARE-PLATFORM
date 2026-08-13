@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { config } from '../src/config.js';
+import { GroqProvider } from '../src/providers/groq-provider.js';
+const originalFetch=globalThis.fetch,originalKey=config.groqApiKey;
+test.beforeEach(()=>{config.groqApiKey='test-server-key'});
+test.afterEach(()=>{globalThis.fetch=originalFetch;config.groqApiKey=originalKey});
+test('successful Groq chat uses configured model',async()=>{let body:Record<string,unknown>|undefined;globalThis.fetch=async(_input,init)=>{body=JSON.parse(String(init?.body));return new Response(JSON.stringify({choices:[{message:{content:'Hello from Groq'}}]}),{status:200})};assert.equal(await new GroqProvider().chat([{role:'user',content:'Hello'}]),'Hello from Groq');assert.equal(body?.model,'llama-3.1-8b-instant')});
+for(const[status,code]of[[401,'AI_PROVIDER_AUTH_ERROR'],[404,'AI_PROVIDER_MODEL_ERROR'],[400,'AI_PROVIDER_REQUEST_ERROR'],[429,'AI_RATE_LIMITED'],[500,'AI_PROVIDER_UNAVAILABLE']]as const)test(`Groq HTTP ${status} maps to ${code}`,async()=>{globalThis.fetch=async()=>new Response('private detail',{status});await assert.rejects(()=>new GroqProvider().chat([{role:'user',content:'Hello'}]),(error:unknown)=>(error as{code?:string}).code===code)});
+test('Groq timeout maps to AI_TIMEOUT',async()=>{globalThis.fetch=async()=>{throw Object.assign(new Error('timed out'),{name:'TimeoutError'})};await assert.rejects(()=>new GroqProvider().chat([{role:'user',content:'Hello'}]),(error:unknown)=>(error as{code?:string}).code==='AI_TIMEOUT')});
+test('Groq health never exposes key',async()=>{const health=await new GroqProvider().healthCheck();assert.deepEqual(health,{provider:'groq',available:true,model:'llama-3.1-8b-instant',detail:undefined});assert.doesNotMatch(JSON.stringify(health),/test-server-key/)});

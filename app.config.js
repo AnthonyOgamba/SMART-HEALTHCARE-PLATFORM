@@ -4,11 +4,8 @@ const path = require('node:path');
 const appJson = require('./app.json');
 
 const customSoundFiles = [
-  'medication_gentle_chime.wav',
-  'medication_soft_bell.wav',
-  'medication_bright_alert.wav',
-  'medication_calm_tone.wav',
-  'medication_classic_reminder.wav',
+  'alarm-clock-digital-beeping.wav',
+  'air-raid-siren-wailing-urgent.wav',
 ];
 
 module.exports = ({ config }) => {
@@ -16,7 +13,7 @@ module.exports = ({ config }) => {
     fs.existsSync(path.join(__dirname, 'assets', 'sounds', filename)),
   );
   const plugins = (appJson.expo.plugins ?? []).map((plugin) =>
-    plugin === 'expo-notifications'
+    (plugin === 'expo-notifications' || (Array.isArray(plugin) && plugin[0] === 'expo-notifications'))
       ? ['expo-notifications', {
           sounds: availableSounds.map((filename) => `./assets/sounds/${filename}`),
         }]

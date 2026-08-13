@@ -96,12 +96,12 @@ export default function SignupScreen() {
         phone: form.phone,
       });
       if (result.session) {
-        router.replace('/(tabs)/home');
+        // AuthProvider performs the onboarding-aware redirect.
       } else {
         Alert.alert(
           'Verify Your Email',
           'We sent a verification link to your email address. Verify your email before logging in.',
-          [{ text: 'Return to Login', onPress: () => router.replace('/') }],
+          [{ text: 'Return to Login', onPress: () => router.replace('/login') }],
         );
       }
     } catch (error) {
@@ -115,12 +115,14 @@ export default function SignupScreen() {
 
   return (
     <AuthLayout
-      title="Create Account"
-      subtitle="Join HealthNexus to manage your health journey securely.">
+      title="Sign In"
+      subtitle="Join Genie Cares and take charge of your health."
+      brandedMascot
+      style={{ padding: Spacing.md, gap: 11 }}>
       <Input
         label="Full Name"
         icon="person-outline"
-        placeholder="John Doe"
+        placeholder="Enter your full name"
         autoCapitalize="words"
         value={form.fullName}
         onChangeText={setField('fullName')}
@@ -142,7 +144,7 @@ export default function SignupScreen() {
       <Input
         label="Phone Number"
         icon="call"
-        placeholder="+1 (555) 000-0000"
+        placeholder="Enter your phone number"
         keyboardType="phone-pad"
         value={form.phone}
         onChangeText={setField('phone')}
@@ -152,7 +154,7 @@ export default function SignupScreen() {
       <Input
         label="Password"
         icon="lock-outline"
-        placeholder="••••••••"
+        placeholder="Create a password"
         secureTextEntry={!showPassword}
         value={form.password}
         onChangeText={setField('password')}
@@ -165,7 +167,7 @@ export default function SignupScreen() {
       <Input
         label="Confirm Password"
         icon="lock-outline"
-        placeholder="••••••••"
+        placeholder="Confirm your password"
         secureTextEntry={!showConfirmPassword}
         value={form.confirmPassword}
         onChangeText={setField('confirmPassword')}
@@ -180,6 +182,7 @@ export default function SignupScreen() {
           accepted={termsAccepted}
           onAcceptedChange={setTermsAccepted}
           onTermsPress={() => router.push('/terms-and-conditions')}
+          onPrivacyPress={() => router.push('/privacy-policy')}
           error={!termsAccepted ? 'Acceptance is required to create an account.' : undefined}
         />
         <Button
@@ -195,7 +198,7 @@ export default function SignupScreen() {
       <AuthFooterLink
         prompt="Already have an account?"
         linkLabel="Login"
-        onPress={() => router.push('/')}
+        onPress={() => router.push('/login')}
       />
     </AuthLayout>
   );

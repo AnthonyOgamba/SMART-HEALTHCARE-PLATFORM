@@ -57,6 +57,9 @@ export async function resetPasswordForEmail(email: string) {
 }
 
 export async function updatePassword(password: string) {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!sessionData.session) throw new Error('Authentication is required to change your password.');
   const { data, error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
   return data.user;

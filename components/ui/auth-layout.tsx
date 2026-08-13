@@ -1,16 +1,19 @@
 import { useMemo } from 'react';
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import { Image } from 'expo-image';
+import { Pressable, ScrollView, StyleSheet, View, type ViewProps } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ScreenContainer } from '@/components/ui/screen-states';
+import { AuthLightThemeProvider } from '@/components/ui/auth-theme-context';
 import { Radius, Spacing } from '@/constants/theme';
-import { usePalette, type ThemePalette } from '@/hooks/use-palette';
+import { Palette, type ThemeColors } from '@/constants/theme';
 
 export interface AuthLayoutProps extends ViewProps {
   title: string;
   subtitle: string;
+  brandedMascot?: boolean;
 }
 
 /**
@@ -24,17 +27,31 @@ export interface AuthLayoutProps extends ViewProps {
  * TODO: swap the placeholder logo icon for the real brand asset once exported
  * from Figma (drop it in assets/images and use <Image> here).
  */
-export function AuthLayout({ title, subtitle, children, ...rest }: AuthLayoutProps) {
-  const theme = usePalette();
+export function AuthLayout({ title, subtitle, brandedMascot = false, children, ...rest }: AuthLayoutProps) {
+  const router = useRouter();
+  const theme = Palette.light;
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
-    <LinearGradient colors={[theme.backgroundWash, theme.screenBg]} style={styles.gradient}>
-      <ScreenContainer contentContainerStyle={styles.scrollContent}>
-        <View style={styles.logoWrap}>
-          <View style={styles.logoBadge}>
-            <MaterialIcons name="favorite" size={28} color={theme.primary} />
-          </View>
+    <AuthLightThemeProvider><SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <View style={styles.topBar}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
+        </Pressable>
+      </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="never">
+        <View style={[styles.logoWrap, brandedMascot && styles.mascotWrap]}>
+          {brandedMascot ? (
+            <Image source={require('@/assets/images/brand/signup-mascot.png')} style={styles.mascot} contentFit="contain" accessibilityLabel="Genie Cares companion" />
+          ) : (
+            <View style={styles.logoBadge}>
+              <MaterialIcons name="favorite" size={28} color={theme.primary} />
+            </View>
+          )}
         </View>
 
         <ThemedText style={styles.title}>{title}</ThemedText>
@@ -51,23 +68,35 @@ export function AuthLayout({ title, subtitle, children, ...rest }: AuthLayoutPro
             encrypted using clinical-grade protocols.
           </ThemedText>
         </View>
-      </ScreenContainer>
-    </LinearGradient>
+      </ScrollView>
+    </SafeAreaView></AuthLightThemeProvider>
   );
 }
 
-const makeStyles = (theme: ThemePalette) =>
+const makeStyles = (theme: ThemeColors) =>
   StyleSheet.create({
-    gradient: { flex: 1 },
+    safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+    topBar: {
+      height: 52,
+      justifyContent: 'center',
+      paddingHorizontal: Spacing.lg,
+      backgroundColor: '#FFFFFF',
+      zIndex: 2,
+    },
+    scroll: { flex: 1, backgroundColor: '#FFFFFF' },
     scrollContent: {
       padding: Spacing.lg,
       gap: Spacing.md,
       flexGrow: 1,
+      backgroundColor: '#FFFFFF',
     },
+    backButton: { width: 44, height: 44, justifyContent: 'center' },
     logoWrap: {
       alignItems: 'center',
-      marginTop: Spacing.md,
+      marginTop: 0,
     },
+    mascotWrap: { marginTop: -8, marginBottom: -14 },
+    mascot: { width: 120, height: 120 },
     logoBadge: {
       width: 64,
       height: 64,

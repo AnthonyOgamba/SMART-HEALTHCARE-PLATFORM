@@ -1,18 +1,21 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
 import { getUserSettings, updateUserSettings, type UserSettingsUpdate } from "@/lib/services/settings";
-import { Brand, PageTypography } from "@/constants/theme";
+import { PageTypography } from "@/constants/theme";
 import { reconcileMedicationReminders } from "@/lib/services/local-medication-reminders";
 import { getActiveMedications } from "@/lib/services/medications";
 import { getUpcomingAppointments } from "@/lib/services/appointments";
 import { reconcileAppointmentReminders } from "@/lib/services/local-appointment-reminders";
+import { usePalette, type ThemePalette } from '@/hooks/use-palette';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [medicationReminders, setMedicationReminders] = useState(true);
 
@@ -21,9 +24,6 @@ export default function SettingsScreen() {
   const [criticalAlerts, setCriticalAlerts] = useState(true);
 
   const [aiInsights, setAiInsights] = useState(true);
-  const [activityGoal, setActivityGoal] = useState("");
-  const [savingGoal, setSavingGoal] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +37,6 @@ export default function SettingsScreen() {
         setAppointmentReminders(settings.appointment_reminders);
         setCriticalAlerts(settings.critical_alerts);
         setAiInsights(settings.ai_enabled);
-        setActivityGoal(settings.daily_activity_goal_minutes?.toString() ?? "");
       })
       .catch((loadError) =>
         setError(loadError instanceof Error ? loadError.message : "Could not load settings."),
@@ -79,15 +78,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const saveActivityGoal = async () => {
-    const value = activityGoal.trim() === '' ? null : Number(activityGoal);
-    if (value !== null && (!Number.isInteger(value) || value <= 0)) { Alert.alert('Invalid Goal', 'Enter a positive whole number of minutes, or leave it blank.'); return; }
-    setSavingGoal(true);
-    try { await updateUserSettings({ daily_activity_goal_minutes: value }); Alert.alert('Goal Saved', value === null ? 'Your activity goal was cleared.' : 'Your daily activity goal was updated.'); }
-    catch { Alert.alert('Could Not Save Goal', 'Please try again.'); }
-    finally { setSavingGoal(false); }
-  };
-
   if (loading) return <LoadingState label="Loading settings..." />;
   if (error) return <ErrorState message={error} onRetry={fetchSettings} />;
 
@@ -95,7 +85,7 @@ export default function SettingsScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
+          <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Settings</Text>
@@ -152,8 +142,8 @@ export default function SettingsScreen() {
 
         <ToggleRow
           icon="auto-awesome"
-          title="AI Health Insights"
-          description="Receive AI-generated wellness summaries and health pattern insights."
+          title="Genie Cares Health Insights"
+          description="Receive Genie Cares wellness summaries and health pattern insights."
           value={aiInsights}
           onValueChange={(value) =>
             persist({ ai_enabled: value }, setAiInsights, value, aiInsights)
@@ -161,25 +151,12 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <Text style={styles.sectionLabel}>ACTIVITY</Text>
-      <View style={styles.card}>
-        <View style={styles.goalRow}>
-          <View style={styles.rowContent}>
-            <Text style={styles.rowTitle}>Daily activity goal</Text>
-            <Text style={styles.rowDescription}>Choose your own optional daily activity-minute goal.</Text>
-          </View>
-          <TextInput accessibilityLabel="Daily activity goal minutes" keyboardType="number-pad" placeholder="None" value={activityGoal} onChangeText={setActivityGoal} style={styles.goalInput}/>
-          <Text style={styles.goalUnit}>minutes</Text>
-        </View>
-        <Pressable accessibilityRole="button" disabled={savingGoal} style={[styles.goalButton, savingGoal && { opacity: 0.6 }]} onPress={saveActivityGoal}><Text style={styles.goalButtonText}>{savingGoal ? 'Saving...' : 'Save Activity Goal'}</Text></Pressable>
-      </View>
-
       <Text style={styles.sectionLabel}>SECURITY</Text>
       <View style={styles.card}>
         <NavigationRow
           icon="security"
           title="Security Center"
-          description="Review account, health-data, privacy, and AI safety controls."
+          description="Review account, health-data, privacy, and Genie Cares safety controls."
           onPress={() => router.push("/security-center" as never)}
         />
 
@@ -199,7 +176,7 @@ export default function SettingsScreen() {
         <NavigationRow
           icon="fact-check"
           title="Consent Management"
-          description="Control AI, health-data, and notification permissions."
+          description="Control Genie Cares, health-data, and notification permissions."
           onPress={() => router.push("/consent-management" as never)}
         />
 
@@ -216,12 +193,10 @@ export default function SettingsScreen() {
       <Text style={styles.sectionLabel}>APP</Text>
       <View style={styles.card}>
         <NavigationRow icon="notifications" title="Notifications" description="Review your notification feed." onPress={() => router.push('/notifications' as never)} />
-        <View style={styles.divider} />
-        <NavigationRow icon="palette" title="Appearance" description="Choose Light or Dark mode from Profile." onPress={() => router.replace('/(tabs)/profile' as never)} />
       </View>
 
       <View style={styles.securityNotice}>
-        <MaterialIcons name="shield" size={22} color={Brand.primary} />
+        <MaterialIcons name="shield" size={22} color={theme.primary} />
 
         <View style={styles.noticeContent}>
           <Text style={styles.noticeTitle}>Health Information Security</Text>
@@ -234,7 +209,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.version}>HealthNexus 1.0</Text>
+      <Text style={styles.version}>Genie Cares 1.0</Text>
     </ScreenContainer>
   );
 }
@@ -252,10 +227,12 @@ function ToggleRow({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.row}>
       <View style={styles.icon}>
-        <MaterialIcons name={icon} size={22} color={Brand.primary} />
+        <MaterialIcons name={icon} size={22} color={theme.primary} />
       </View>
 
       <View style={styles.rowContent}>
@@ -268,8 +245,8 @@ function ToggleRow({
         value={value}
         onValueChange={onValueChange}
         trackColor={{
-          false: "#D7DBDF",
-          true: Brand.primary,
+          false: theme.disabledBackground,
+          true: theme.primary,
         }}
         thumbColor="#FFFFFF"
       />
@@ -288,10 +265,12 @@ function NavigationRow({
   description: string;
   onPress: () => void;
 }) {
+  const theme = usePalette();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable style={styles.row} onPress={onPress}>
       <View style={styles.icon}>
-        <MaterialIcons name={icon} size={22} color={Brand.primary} />
+        <MaterialIcons name={icon} size={22} color={theme.primary} />
       </View>
 
       <View style={styles.rowContent}>
@@ -300,17 +279,17 @@ function NavigationRow({
         <Text style={styles.rowDescription}>{description}</Text>
       </View>
 
-      <MaterialIcons name="chevron-right" size={24} color="#858B94" />
+      <MaterialIcons name="chevron-right" size={24} color={theme.iconMuted} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   content: {
     padding: 18,
     paddingBottom: 110,
     gap: 14,
-    backgroundColor: "#F7F9FB",
+    backgroundColor: theme.screenBg,
   },
 
   header: {
@@ -326,12 +305,12 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: Brand.accent,
+    color: theme.accent,
     ...PageTypography.title,
   },
 
   sectionLabel: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.8,
@@ -339,9 +318,9 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     borderWidth: 1,
-    borderColor: "#E1E5E9",
+    borderColor: theme.cardBorder,
     borderRadius: 16,
     paddingHorizontal: 15,
   },
@@ -358,7 +337,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: Brand.backgroundWash,
+    backgroundColor: theme.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -368,13 +347,13 @@ const styles = StyleSheet.create({
   },
 
   rowTitle: {
-    color: "#191C1E",
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: "700",
   },
 
   rowDescription: {
-    color: "#707783",
+    color: theme.textSecondary,
     fontSize: 10,
     lineHeight: 15,
     marginTop: 3,
@@ -382,16 +361,16 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "#EDF0F2",
+    backgroundColor: theme.cardBorder,
   },
 
   securityNotice: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 11,
-    backgroundColor: "#EEF6FB",
+    backgroundColor: theme.infoBoxBg,
     borderWidth: 1,
-    borderColor: "#D4E5F0",
+    borderColor: theme.infoBoxBorder,
     borderRadius: 14,
     padding: 15,
   },
@@ -401,13 +380,13 @@ const styles = StyleSheet.create({
   },
 
   noticeTitle: {
-    color: Brand.primary,
+    color: theme.primary,
     fontSize: 13,
     fontWeight: "700",
   },
 
   noticeText: {
-    color: "#59616D",
+    color: theme.infoBoxText,
     fontSize: 10,
     lineHeight: 16,
     marginTop: 3,
@@ -418,7 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#F0BBB5",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.cardBg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -432,13 +411,8 @@ const styles = StyleSheet.create({
   },
 
   version: {
-    color: "#858B94",
+    color: theme.textMuted,
     fontSize: 11,
     textAlign: "center",
   },
-  goalRow:{minHeight:82,flexDirection:"row",alignItems:"center",gap:8,paddingVertical:13},
-  goalInput:{width:68,height:42,borderWidth:1,borderColor:Brand.inputBorder,borderRadius:9,paddingHorizontal:10,backgroundColor:"#FFFFFF",textAlign:"center"},
-  goalUnit:{fontSize:12,color:Brand.textSecondary},
-  goalButton:{marginBottom:15,height:44,borderRadius:10,backgroundColor:Brand.primary,alignItems:"center",justifyContent:"center"},
-  goalButtonText:{color:"#FFFFFF",fontWeight:"700"},
 });

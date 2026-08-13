@@ -2,8 +2,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { useScopedPalette } from '@/components/ui/auth-theme-context';
 import { Radius, Spacing } from '@/constants/theme';
-import { usePalette } from '@/hooks/use-palette';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
@@ -20,7 +20,7 @@ export type ButtonProps = Omit<PressableProps, 'children'> & {
  * later means editing `styles` here, not every screen.
  */
 export function Button({ label, variant = 'primary', loading, icon, disabled, style, ...rest }: ButtonProps) {
-  const theme = usePalette();
+  const theme = useScopedPalette();
   const isDisabled = disabled || loading;
 
   const variantStyle =

@@ -16,12 +16,13 @@ import { usePalette } from '@/hooks/use-palette';
  * mode. Individual screens still set their own contentContainerStyle
  * background for the scrollable content itself.
  */
-export function ScreenContainer({ children, style, ...rest }: ScrollViewProps) {
+export function ScreenContainer({ children, style, contentContainerStyle, ...rest }: ScrollViewProps) {
   const theme = usePalette();
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.screenBg }]} edges={['top', 'left', 'right']}>
       <ScrollView
-        contentContainerStyle={[styles.content, style as object]}
+        style={{ backgroundColor: theme.screenBg }}
+        contentContainerStyle={[styles.content, style as object, contentContainerStyle, { backgroundColor: theme.screenBg }]}
         keyboardShouldPersistTaps="handled"
         {...rest}>
         {children}

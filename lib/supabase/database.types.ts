@@ -50,6 +50,7 @@ export interface Database {
           ai_enabled: boolean;
           daily_activity_goal_minutes: number | null;
           appearance: 'light' | 'dark';
+          onboarding_completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +62,7 @@ export interface Database {
           ai_enabled?: boolean;
           daily_activity_goal_minutes?: number | null;
           appearance?: 'light' | 'dark';
+          onboarding_completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -71,6 +73,7 @@ export interface Database {
           ai_enabled?: boolean;
           daily_activity_goal_minutes?: number | null;
           appearance?: 'light' | 'dark';
+          onboarding_completed_at?: string | null;
         };
         Relationships: [];
       };
@@ -92,6 +95,9 @@ export interface Database {
       sleep_logs: { Row: { id:string;user_id:string;sleep_start:string;wake_time:string;quality:number|null;notes:string|null;source:'manual'|'apple_health'|'health_connect';created_at:string;updated_at:string }; Insert: never; Update: never; Relationships: [] };
       notifications: { Row: { id:string;user_id:string;type:'medication'|'appointment'|'refill'|'activity'|'general'|'critical';title:string;body:string;appointment_id:string|null;medication_log_id:string|null;read_at:string|null;created_at:string }; Insert: never; Update: never; Relationships: [] };
       medication_refills: { Row: { id:string;medication_id:string;user_id:string;quantity_received:number;refilled_at:string;created_at:string }; Insert: never; Update: never; Relationships: [] };
+      conversations: { Row: { id:string;user_id:string;title:string|null;archived_at:string|null;created_at:string;updated_at:string }; Insert: never; Update: never; Relationships: [] };
+      conversation_messages: { Row: { id:string;conversation_id:string;role:'user'|'assistant'|'system';content:string;created_at:string }; Insert: never; Update: never; Relationships: [] };
+      symptom_assessments: { Row: { id:string;user_id:string;symptoms:Json;urgency:'emergency'|'urgent'|'routine'|'self_care';summary:string;possible_considerations:Json;red_flags:Json;next_step:string;disclaimer:string;created_at:string }; Insert: never; Update: never; Relationships: [] };
     };
     Views: Record<string, never>;
     Functions: {

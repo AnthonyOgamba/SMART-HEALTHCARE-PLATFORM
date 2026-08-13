@@ -50,7 +50,7 @@ export default function SymptomDetailsScreen() {
             <Text style={styles.aiTitle}>Symptom Severity</Text>
 
             <Text style={styles.aiDescription}>
-              Providing accurate details helps our AI Care analyze potential
+              Providing accurate details helps Genie Cares analyze potential
               causes and urgency.
             </Text>
           </View>

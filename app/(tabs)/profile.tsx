@@ -18,6 +18,7 @@ import type { Profile } from '@/lib/services/profile';
 import { useAuth } from '@/providers/auth-provider';
 import { useProfile } from '@/providers/profile-provider';
 import { useAppearance, type Appearance } from '@/providers/appearance-provider';
+import { usePhoneActivity } from '@/hooks/use-phone-activity';
 
 type EditableProfile = Pick<
   Profile,
@@ -39,6 +40,7 @@ export default function ProfileScreen() {
   const [draft, setDraft] = useState<EditableProfile | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { availability: phoneAvailability } = usePhoneActivity(false);
   useEffect(() => {
     if (!profile) return;
     setDraft({
@@ -56,6 +58,7 @@ export default function ProfileScreen() {
   };
 
   const save = async () => {
+    if (saving) return;
     if (!draft?.full_name.trim()) {
       Alert.alert('Full Name Required', 'Enter your full name before saving.');
       return;
@@ -63,10 +66,11 @@ export default function ProfileScreen() {
     setSaving(true);
     try {
       await saveProfile({ ...draft, full_name: draft.full_name.trim() });
+      await refreshProfile();
       setEditing(false);
     } catch (saveError) {
       console.error('Failed to save the authenticated profile.', saveError);
-      Alert.alert('Could Not Save Profile', 'Please check your information and try again.');
+      Alert.alert('Could Not Save Profile', "We couldn't save your profile. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -103,8 +107,8 @@ export default function ProfileScreen() {
           <Input label="Emergency Contact" icon="shield" value={draft.emergency_contact_name ?? ''} onChangeText={setField('emergency_contact_name')} />
           <Input label="Relationship" icon="people" value={draft.emergency_contact_relationship ?? ''} onChangeText={setField('emergency_contact_relationship')} />
           <Input label="Emergency Phone" icon="call" value={draft.emergency_contact_phone ?? ''} onChangeText={setField('emergency_contact_phone')} keyboardType="phone-pad" />
-          <Button label="Save Profile" icon="save" onPress={save} loading={saving} />
-          <Button label="Cancel" variant="secondary" onPress={() => setEditing(false)} />
+          <Button label="Save Profile" icon="save" onPress={save} loading={saving} disabled={saving} />
+          <Button label="Cancel" variant="secondary" onPress={() => setEditing(false)} disabled={saving} />
         </SurfaceCard>
       ) : (
         <>
@@ -131,6 +135,16 @@ export default function ProfileScreen() {
         </>
       )}
 
+      <Pressable onPress={() => router.push('/connected-health' as never)}><SurfaceCard>
+        <View style={styles.connectedHeader}>
+          <IconBadge icon="favorite" color={theme.blueIcon} backgroundColor={theme.blueTint} size={30} />
+          <ThemedText type="defaultSemiBold">Connected Health</ThemedText>
+          <ThemedText style={styles.manageLink}>Manage / See All</ThemedText>
+        </View>
+        <View style={styles.connectionRow}><View><ThemedText style={styles.connectionTitle}>Phone Activity</ThemedText><ThemedText style={styles.email}>Steps recorded by this phone</ThemedText></View><ThemedText style={styles.connectionState}>{phoneAvailability === 'available' ? 'Connected' : 'Unavailable'}</ThemedText></View>
+        <View style={styles.connectionRow}><View><ThemedText style={styles.connectionTitle}>Apple Health</ThemedText><ThemedText style={styles.email}>Apple Watch and Health data</ThemedText></View><ThemedText style={styles.connectionPending}>Not Connected</ThemedText></View>
+      </SurfaceCard></Pressable>
+
       <SurfaceCard>
         <View style={styles.cardHeader}>
           <IconBadge icon="palette" color={theme.blueIcon} backgroundColor={theme.blueTint} size={30} />
@@ -156,13 +170,13 @@ export default function ProfileScreen() {
         onPress={async () => {
           try {
             await signOut();
-            router.replace('/');
+            // AuthProvider observes the cleared session and routes to Welcome.
           } catch (logoutError) {
             Alert.alert('Could Not Log Out', logoutError instanceof Error ? logoutError.message : 'Try again.');
           }
         }}
       />
-      <ThemedText style={styles.version}>HealthNexus 1.0</ThemedText>
+      <ThemedText style={styles.version}>Genie Cares 1.0</ThemedText>
     </ScreenContainer>
   );
 }
@@ -176,9 +190,12 @@ const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   name: { fontSize: 17, marginTop: Spacing.xs },
   email: { fontSize: 13, color: theme.textSecondary },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
+  connectedHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
+  manageLink: { marginLeft: 'auto', color: theme.primary, fontSize: 12, fontWeight: '700' },
   version: { textAlign: 'center', fontSize: 12, color: theme.textMuted, marginTop: Spacing.sm },
   appearanceRow: { flexDirection: 'row', gap: Spacing.sm },
   appearanceOption: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: theme.inputBorder, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   appearanceSelected: { backgroundColor: theme.primary, borderColor: theme.primary },
   appearanceText: { color: theme.primary, fontWeight: '700' },
+  connectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm, paddingVertical: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.cardBorder }, connectionTitle: { color: theme.textPrimary, fontWeight: '700' }, connectionState: { color: theme.successPillText, fontSize: 12, fontWeight: '700' }, connectionPending: { maxWidth: 125, color: theme.textSecondary, fontSize: 11, lineHeight: 15, textAlign: 'right', fontWeight: '700' },
 });
