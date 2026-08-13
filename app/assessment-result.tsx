@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
+import { Brand } from "@/constants/theme";
 
 export default function AssessmentResultScreen() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function AssessmentResultScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.headerButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={23} color="#00288E" />
+          <MaterialIcons name="arrow-back" size={23} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Your Assessment</Text>
@@ -34,7 +35,7 @@ export default function AssessmentResultScreen() {
       <View style={styles.concernCard}>
         <View style={styles.concernRow}>
           <View style={styles.concernIcon}>
-            <MaterialIcons name="health-and-safety" size={25} color="#00714D" />
+            <MaterialIcons name="health-and-safety" size={25} color={Brand.primary} />
           </View>
 
           <View style={styles.concernContent}>
@@ -76,7 +77,7 @@ export default function AssessmentResultScreen() {
 
       <View style={styles.metricsRow}>
         <View style={styles.metricCard}>
-          <MaterialIcons name="thermostat" size={21} color="#00288E" />
+          <MaterialIcons name="thermostat" size={21} color={Brand.primary} />
 
           <Text style={styles.metricLabel}>Severity</Text>
 
@@ -84,7 +85,7 @@ export default function AssessmentResultScreen() {
         </View>
 
         <View style={styles.metricCard}>
-          <MaterialIcons name="schedule" size={21} color="#00714D" />
+          <MaterialIcons name="schedule" size={21} color={Brand.secondary} />
 
           <Text style={styles.metricLabel}>Follow-up</Text>
 
@@ -131,7 +132,7 @@ export default function AssessmentResultScreen() {
 function CareItem({ text }: { text: string }) {
   return (
     <View style={styles.careRow}>
-      <MaterialIcons name="check-circle-outline" size={20} color="#005EA4" />
+      <MaterialIcons name="check-circle-outline" size={20} color={Brand.secondary} />
 
       <Text style={styles.careText}>{text}</Text>
     </View>
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     flex: 1,
-    color: "#00288E",
+    color: Brand.primary,
     fontSize: 23,
     fontWeight: "700",
   },
@@ -171,7 +172,7 @@ const styles = StyleSheet.create({
   aiHero: {
     height: 160,
     borderRadius: 16,
-    backgroundColor: "#1748A8",
+    backgroundColor: Brand.bannerBackground,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#6CF8BB",
+    backgroundColor: Brand.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
   },
 
   guidanceCard: {
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.bannerBackground,
     borderRadius: 16,
     padding: 22,
   },
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
   aiButton: {
     height: 56,
     borderRadius: 12,
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primaryButtonBackground,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

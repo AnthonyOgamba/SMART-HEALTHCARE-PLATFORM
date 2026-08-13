@@ -23,7 +23,6 @@ const PUBLIC_ROUTES = new Set([
   'terms-and-conditions',
 ]);
 const AUTH_ENTRY_ROUTES = new Set(['', 'signup', 'forgot-password']);
-const OUT_OF_SCOPE_ROUTES = new Set(['analytics', 'wearable-data']);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const router = useRouter();
@@ -75,7 +74,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const root = segments[0] ?? '';
     if (!session && !PUBLIC_ROUTES.has(root)) router.replace('/');
     if (session && AUTH_ENTRY_ROUTES.has(root)) router.replace('/(tabs)/home');
-    if (session && OUT_OF_SCOPE_ROUTES.has(root)) router.replace('/(tabs)/home');
   }, [loading, router, segments, session]);
 
   const value = useMemo(

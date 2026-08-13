@@ -17,8 +17,6 @@ export interface User {
 
 export interface ConsentSummary {
   assistantEnabled: boolean;
-  wearableEnabled: boolean;
-  analyticsEnabled: boolean;
   updatedAt: string;
 }
 
@@ -33,6 +31,11 @@ export interface Medication {
   startDate: string;
   endDate: string | null;
   reminderSound: import('@/lib/notification-sounds').MedicationReminderSound;
+  supplyQuantity: number | null;
+  unitsPerDose: number | null;
+  supplyUnit: 'tablet' | 'capsule' | 'mL' | 'dose' | 'other' | null;
+  refillWarningDays: number | null;
+  lastRefilledAt: string | null;
   active: boolean;
   archivedAt: string | null;
   createdAt: string;
@@ -115,6 +118,12 @@ export interface Appointment {
   status: AppointmentStatus;
   notes?: string;
 }
+
+export interface CareAppointment { id:string; title:string; providerName:string|null; practitionerType:string|null; appointmentType:string|null; location:string|null; startsAt:string; endsAt:string|null; notes:string|null; status:AppointmentStatus; reminderAt:string|null; reminderSound:import('@/lib/notification-sounds').MedicationReminderSound; attendanceConfirmedAt:string|null; }
+export interface ActivityLog { id:string; activityType:string; startedAt:string; durationMinutes:number|null; distanceKm:number|null; steps:number|null; notes:string|null; source:'manual'|'apple_health'|'health_connect'; status:'scheduled'|'completed'|'skipped'; completedAt:string|null; seriesId:string|null; recurrence:'none'|'daily'|'weekly'; }
+export interface SleepLog { id:string; sleepStart:string; wakeTime:string; quality:number|null; notes:string|null; source:'manual'|'apple_health'|'health_connect'; }
+export interface InAppNotification { id:string; type:'medication'|'appointment'|'refill'|'activity'|'general'|'critical'; title:string; body:string; appointmentId:string|null; medicationLogId:string|null; readAt:string|null; createdAt:string; }
+export type CareScheduleItem={id:string;kind:'medication'|'appointment'|'activity'|'sleep';startsAt:string;title:string;subtitle:string;status?:string;resourceId:string;actionId?:string;attendanceConfirmedAt?:string|null};
 
 export interface SymptomJournalEntry {
   id: string;

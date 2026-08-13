@@ -29,7 +29,7 @@ export default function SymptomAssessmentScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#00288E" />
+          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Health Check</Text>
@@ -47,10 +47,10 @@ export default function SymptomAssessmentScreen() {
 
       <View style={styles.visualCard}>
         <View style={styles.visualCenter}>
-          <MaterialIcons name="favorite" size={86} color="#71A8D2" />
+          <MaterialIcons name="health-and-safety" size={86} color={Brand.secondary} />
 
           <View style={styles.heartCircle}>
-            <MaterialIcons name="favorite" size={27} color="#FFFFFF" />
+            <MaterialIcons name="check" size={27} color="#FFFFFF" />
           </View>
         </View>
 
@@ -91,7 +91,7 @@ export default function SymptomAssessmentScreen() {
       <Pressable style={styles.answerCard} onPress={continueAssessment}>
         <View style={styles.answerLeft}>
           <View style={styles.noIcon}>
-            <MaterialIcons name="check-circle" size={27} color="#00714D" />
+            <MaterialIcons name="check-circle" size={27} color={Brand.primary} />
           </View>
 
           <View style={styles.answerTextArea}>
@@ -107,7 +107,7 @@ export default function SymptomAssessmentScreen() {
       </Pressable>
 
       <View style={styles.aiNotice}>
-        <MaterialIcons name="psychology" size={22} color="#00288E" />
+        <MaterialIcons name="psychology" size={22} color={Brand.primary} />
 
         <View style={styles.aiNoticeContent}>
           <Text style={styles.aiNoticeTitle}>AI Safety Check</Text>
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: Brand.accent,
+    color: Brand.primary,
     ...PageTypography.title,
   },
 
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   },
 
   stepLabel: {
-    color: "#00288E",
+    color: Brand.primary,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     width: "75%",
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primary,
     borderRadius: 999,
   },
 
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#2781B9",
+    backgroundColor: Brand.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#6FFBBE",
+    backgroundColor: Brand.secondary,
   },
 
   visualLabel: {
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#6CF8BB",
+    backgroundColor: Brand.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   },
 
   aiNoticeTitle: {
-    color: "#00288E",
+    color: Brand.primary,
     fontSize: 13,
     fontWeight: "700",
   },

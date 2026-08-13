@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
+import { PageBanner } from "@/components/ui/page-banner";
+import { Brand } from "@/constants/theme";
 
 export default function SecurityCenterScreen() {
   const router = useRouter();
@@ -17,24 +19,13 @@ export default function SecurityCenterScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#00288E" />
+          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Security Center</Text>
       </View>
 
-      <View style={styles.heroCard}>
-        <View style={styles.shield}>
-          <MaterialIcons name="verified-user" size={40} color="#FFFFFF" />
-        </View>
-
-        <Text style={styles.heroTitle}>Protecting your health information</Text>
-
-        <Text style={styles.heroText}>
-          Health information is sensitive. This area brings together account,
-          privacy, consent, and device-security controls.
-        </Text>
-      </View>
+      <PageBanner icon="verified-user" title="Protecting your health information" description="Health information is sensitive. This area brings together account, privacy, consent, and device-security controls." />
 
       <Text style={styles.sectionLabel}>ACCOUNT SECURITY</Text>
 
@@ -44,8 +35,8 @@ export default function SecurityCenterScreen() {
           title="Secure Authentication"
           description="Access to personal health information requires an authenticated account."
           status="Required"
-          statusColor="#00714D"
-          statusBackground="#DFF5EC"
+          statusColor={Brand.primary}
+          statusBackground={Brand.backgroundWash}
         />
 
         <View style={styles.divider} />
@@ -55,8 +46,8 @@ export default function SecurityCenterScreen() {
           title="Password Protection"
           description="Account credentials are managed separately from health information."
           status="Enabled"
-          statusColor="#00714D"
-          statusBackground="#DFF5EC"
+          statusColor={Brand.primary}
+          statusBackground={Brand.backgroundWash}
         />
 
         <View style={styles.divider} />
@@ -66,8 +57,8 @@ export default function SecurityCenterScreen() {
           title="Session Protection"
           description="Users should sign out on shared devices and inactive sessions should expire."
           status="Important"
-          statusColor="#005EA4"
-          statusBackground="#E4F0FA"
+          statusColor={Brand.primary}
+          statusBackground={Brand.backgroundWash}
         />
       </View>
 
@@ -126,7 +117,7 @@ export default function SecurityCenterScreen() {
       <View style={styles.aiSafetyCard}>
         <View style={styles.aiHeader}>
           <View style={styles.aiIcon}>
-            <MaterialIcons name="psychology" size={25} color="#6246A6" />
+            <MaterialIcons name="psychology" size={25} color={Brand.primary} />
           </View>
 
           <View style={styles.aiHeaderText}>
@@ -154,7 +145,7 @@ export default function SecurityCenterScreen() {
         onPress={() => router.push("/consent-management" as never)}
       >
         <View style={styles.navIconGreen}>
-          <MaterialIcons name="fact-check" size={24} color="#00714D" />
+          <MaterialIcons name="fact-check" size={24} color={Brand.primary} />
         </View>
 
         <View style={styles.navContent}>
@@ -173,7 +164,7 @@ export default function SecurityCenterScreen() {
         onPress={() => router.push("/privacy-policy" as never)}
       >
         <View style={styles.navIconBlue}>
-          <MaterialIcons name="privacy-tip" size={24} color="#005EA4" />
+          <MaterialIcons name="privacy-tip" size={24} color={Brand.primary} />
         </View>
 
         <View style={styles.navContent}>
@@ -188,7 +179,7 @@ export default function SecurityCenterScreen() {
       </Pressable>
 
       <View style={styles.reminderCard}>
-        <MaterialIcons name="info-outline" size={21} color="#005EA4" />
+        <MaterialIcons name="info-outline" size={21} color={Brand.primary} />
 
         <Text style={styles.reminderText}>
           Frontend controls are only one layer of security. Authentication,
@@ -219,7 +210,7 @@ function SecurityItem({
   return (
     <View style={styles.securityRow}>
       <View style={styles.securityIcon}>
-        <MaterialIcons name={icon} size={22} color="#00288E" />
+        <MaterialIcons name={icon} size={22} color={Brand.primary} />
       </View>
 
       <View style={styles.securityInfo}>
@@ -267,7 +258,7 @@ function ToggleSecurityRow({
   return (
     <View style={styles.securityRow}>
       <View style={styles.securityIcon}>
-        <MaterialIcons name={icon} size={22} color="#00288E" />
+        <MaterialIcons name={icon} size={22} color={Brand.primary} />
       </View>
 
       <View style={styles.securityInfo}>
@@ -281,7 +272,7 @@ function ToggleSecurityRow({
         onValueChange={onValueChange}
         trackColor={{
           false: "#C8CDD3",
-          true: "#005EA4",
+          true: Brand.primary,
         }}
         thumbColor="#FFFFFF"
       />
@@ -301,7 +292,7 @@ function ProtectionCard({
   return (
     <View style={styles.protectionCard}>
       <View style={styles.protectionIcon}>
-        <MaterialIcons name={icon} size={23} color="#005EA4" />
+        <MaterialIcons name={icon} size={23} color={Brand.primary} />
       </View>
 
       <Text style={styles.protectionTitle}>{title}</Text>
@@ -314,7 +305,7 @@ function ProtectionCard({
 function SafetyPoint({ text }: { text: string }) {
   return (
     <View style={styles.safetyPoint}>
-      <MaterialIcons name="check-circle" size={19} color="#00714D" />
+      <MaterialIcons name="check-circle" size={19} color={Brand.primary} />
 
       <Text style={styles.safetyPointText}>{text}</Text>
     </View>
@@ -342,14 +333,14 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#00288E",
+    color: Brand.primary,
     fontSize: 24,
     fontWeight: "700",
   },
 
   heroCard: {
     alignItems: "center",
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primary,
     borderRadius: 18,
     padding: 24,
   },
@@ -485,9 +476,9 @@ const styles = StyleSheet.create({
   },
 
   aiSafetyCard: {
-    backgroundColor: "#F2EEFA",
+    backgroundColor: Brand.backgroundWash,
     borderWidth: 1,
-    borderColor: "#DED5EE",
+    borderColor: Brand.infoBoxBorder,
     borderRadius: 16,
     padding: 17,
     gap: 13,
@@ -503,7 +494,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#E3DAF3",
+    backgroundColor: Brand.infoBoxBg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -513,7 +504,7 @@ const styles = StyleSheet.create({
   },
 
   aiTitle: {
-    color: "#523990",
+    color: Brand.primary,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -553,7 +544,7 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 12,
-    backgroundColor: "#DFF5EC",
+    backgroundColor: Brand.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },

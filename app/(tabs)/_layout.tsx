@@ -11,28 +11,13 @@ type IconSymbolName = React.ComponentProps<typeof IconSymbol>["name"];
 function TabIcon({
   name,
   color,
-  focused,
 }: {
   name: IconSymbolName;
   color: string;
-  focused: boolean;
 }) {
   return (
     <View style={styles.iconWrap}>
       <IconSymbol size={26} name={name} color={color} />
-
-      {focused ? (
-        <View
-          style={[
-            styles.dot,
-            {
-              backgroundColor: color,
-            },
-          ]}
-        />
-      ) : (
-        <View style={styles.dotSpacer} />
-      )}
     </View>
   );
 }
@@ -67,8 +52,8 @@ export default function TabLayout() {
         options={{
           title: "Home",
 
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="house.fill" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="house.fill" color={color} />
           ),
         }}
       />
@@ -78,19 +63,8 @@ export default function TabLayout() {
         options={{
           title: "Schedule",
 
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="calendar" color={color} focused={focused} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="medications"
-        options={{
-          title: "Meds",
-
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="cross.case.fill" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="calendar" color={color} />
           ),
         }}
       />
@@ -100,11 +74,10 @@ export default function TabLayout() {
         options={{
           title: "AI Care",
 
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color }) => (
             <TabIcon
               name="brain.head.profile"
               color={color}
-              focused={focused}
             />
           ),
         }}
@@ -115,8 +88,8 @@ export default function TabLayout() {
         options={{
           title: "Profile",
 
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="person.fill" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="person.fill" color={color} />
           ),
         }}
       />
@@ -138,14 +111,4 @@ const styles = StyleSheet.create({
     gap: 3,
   },
 
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-
-  dotSpacer: {
-    width: 4,
-    height: 4,
-  },
 });

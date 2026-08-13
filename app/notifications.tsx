@@ -1,126 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { EmptyState, LoadingState, ScreenContainer } from '@/components/ui/screen-states';
+import { Brand } from '@/constants/theme';
+import { getNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/services/notifications';
+import type { InAppNotification } from '@/types';
 
-import { ThemedText } from '@/components/themed-text';
-import { NotificationCard } from '@/components/ui/notification-card';
-import { EmptyState, ErrorState, LoadingState, ScreenContainer } from '@/components/ui/screen-states';
-import { SectionHeader } from '@/components/ui/section-header';
-import { Spacing } from '@/constants/theme';
-import { usePalette, type ThemePalette } from '@/hooks/use-palette';
-import { mockDelay, mockNotifications } from '@/lib/api/mock';
-import type { AppNotification } from '@/types';
-
-async function loadNotifications(): Promise<AppNotification[]> {
-  // TODO: swap for `api.get<AppNotification[]>('/notifications')`
-  return mockDelay(mockNotifications);
+export default function Notifications(){
+ const router=useRouter(),[data,setData]=useState<InAppNotification[]|null>(null),[error,setError]=useState('');
+ const load=useCallback(async()=>{setError('');try{setData(await getNotifications());}catch(loadError){if(__DEV__)console.debug('[Notifications] Failed to load',{name:loadError instanceof Error?loadError.name:'UnknownError',message:loadError instanceof Error?loadError.message:'Unknown failure'});setError('Could not load notifications.');}},[]);
+ useFocusEffect(useCallback(()=>{void load();},[load]));
+ const goBack=()=>router.canGoBack()?router.back():router.replace('/(tabs)/home');
+ const open=async(notification:InAppNotification)=>{if(!notification.readAt)await markNotificationRead(notification.id);if(notification.appointmentId)router.push({pathname:'/appointment-details',params:{id:notification.appointmentId}});else if(notification.medicationLogId)router.push('/(tabs)/appointments');else await load();};
+ return <ScreenContainer contentContainerStyle={styles.content}><View style={styles.header}><View style={styles.headerLeft}><Pressable accessibilityLabel="Go back" hitSlop={10} onPress={goBack}><MaterialIcons name="arrow-back" size={24} color={Brand.primary}/></Pressable><Text style={styles.title}>Notifications</Text></View>{data?.length?<Pressable onPress={async()=>{await markAllNotificationsRead();await load();}}><Text style={styles.mark}>Mark all as read</Text></Pressable>:null}</View>
+  {data===null&&!error?<LoadingState label="Loading notifications..."/>:error?<View accessibilityRole="alert" style={styles.error}><Text style={styles.errorTitle}>{error}</Text><Pressable style={styles.retry} onPress={load}><Text style={styles.retryText}>Try Again</Text></Pressable></View>:!data?.length?<EmptyState message="No notifications yet."/>:data.map(notification=><Pressable key={notification.id} style={[styles.card,!notification.readAt&&styles.unread]} onPress={()=>open(notification)}><View style={styles.flex}><Text style={styles.cardTitle}>{notification.title}</Text><Text style={styles.body}>{notification.body}</Text><Text style={styles.time}>{new Date(notification.createdAt).toLocaleString()}</Text></View>{!notification.readAt?<View style={styles.dot}/>:null}</Pressable>)}
+ </ScreenContainer>;
 }
-
-/** Action button labels per notification type. First label renders as primary. */
-function actionsFor(notification: AppNotification): string[] | undefined {
-  if (!notification.actionable) return undefined;
-  if (notification.type === 'medication') return ['Taken', 'Snooze'];
-  if (notification.type === 'appointment') return ['Confirm Attendance'];
-  return undefined;
-}
-
-export default function NotificationsScreen() {
-  const router = useRouter();
-  const theme = usePalette();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const [notifications, setNotifications] = useState<AppNotification[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    loadNotifications()
-      .then(setNotifications)
-      .catch(() => setError('Could not load notifications.'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  if (loading) return <LoadingState label="Loading notifications…" />;
-  if (error) return <ErrorState message={error} onRetry={fetchData} />;
-  if (!notifications || notifications.length === 0) {
-    return <EmptyState message="You're all caught up." />;
-  }
-
-  const groups: AppNotification['group'][] = ['Today', 'Upcoming', 'Yesterday'];
-
-  return (
-    <ScreenContainer contentContainerStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerLeft}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            onPress={() => router.back()}
-            hitSlop={8}>
-            <MaterialIcons name="arrow-back" size={22} color={theme.iconDefault} />
-          </Pressable>
-          <ThemedText type="title" style={styles.headerTitle}>
-            Notifications
-          </ThemedText>
-        </View>
-        <Pressable accessibilityRole="button">
-          <ThemedText style={styles.markAllRead}>Mark all as read</ThemedText>
-        </Pressable>
-      </View>
-
-      {groups.map((group) => {
-        const items = notifications.filter((n) => n.group === group);
-        if (items.length === 0) return null;
-        return (
-          <View key={group} style={{ gap: Spacing.sm }}>
-            <SectionHeader label={group.toUpperCase()} />
-            {items.map((item) => (
-              <NotificationCard
-                key={item.id}
-                notification={item}
-                actions={actionsFor(item)}
-                onActionPress={() => {
-                  // TODO: wire to Member 4's notification action endpoints.
-                }}
-              />
-            ))}
-          </View>
-        );
-      })}
-    </ScreenContainer>
-  );
-}
-
-const makeStyles = (theme: ThemePalette) =>
-  StyleSheet.create({
-    content: {
-      padding: Spacing.md,
-      gap: Spacing.lg,
-      backgroundColor: theme.screenBg,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-    },
-    headerTitle: {
-      fontSize: 20,
-      color: theme.accent,
-    },
-    markAllRead: {
-      fontSize: 13,
-      color: theme.accent,
-      fontWeight: '600',
-    },
-  });
+const styles=StyleSheet.create({content:{paddingHorizontal:18,paddingTop:20,gap:12,backgroundColor:Brand.screenBg},header:{minHeight:48,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},headerLeft:{flexDirection:'row',alignItems:'center',gap:12},title:{fontSize:25,fontWeight:'700',color:Brand.primary},mark:{color:Brand.primary,fontWeight:'700',fontSize:12},card:{padding:15,flexDirection:'row',borderRadius:14,borderWidth:1,borderColor:Brand.cardBorder,backgroundColor:'#FFF'},unread:{borderColor:Brand.primary,backgroundColor:Brand.backgroundWash},flex:{flex:1},cardTitle:{fontWeight:'700',color:Brand.textPrimary},body:{color:Brand.textSecondary,marginTop:4},time:{fontSize:10,color:Brand.textMuted,marginTop:7},dot:{width:8,height:8,borderRadius:4,backgroundColor:Brand.primary},error:{padding:20,gap:12,backgroundColor:'#FFF',borderRadius:14,borderWidth:1,borderColor:Brand.cardBorder},errorTitle:{fontWeight:'700',color:Brand.textPrimary},retry:{alignSelf:'flex-start',paddingHorizontal:18,paddingVertical:10,borderRadius:9,backgroundColor:Brand.primary},retryText:{color:'#FFF',fontWeight:'700'}});

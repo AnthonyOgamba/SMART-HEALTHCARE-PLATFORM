@@ -23,7 +23,7 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: '2. Data Collection',
-    body: 'We collect various types of information for various purposes to provide and improve our service to you. This includes: personal identification information (name, email, phone), health records and medical history, biometric data for secure access, and activity data from connected devices (Apple Health, Fitbit).',
+    body: 'We collect information needed to provide and improve the service. This includes personal identification information (name, email, phone), health records and medical history, optional biometric authentication preferences, and activity data that you enter.',
   },
   {
     heading: '3. Data Usage',

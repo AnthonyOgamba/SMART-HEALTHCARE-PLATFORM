@@ -1,511 +1,155 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
-import { ThemedText } from "@/components/themed-text";
-import { HealthMetricRow } from "@/components/ui/health-metric-row";
-import {
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  ScreenContainer,
-} from "@/components/ui/screen-states";
-import { SectionHeader } from "@/components/ui/section-header";
-import { SurfaceCard } from "@/components/ui/surface-card";
-import { Radius, Spacing } from "@/constants/theme";
-import { usePalette, type ThemePalette } from "@/hooks/use-palette";
-import { mockDashboard, mockDelay, mockHealthMetrics } from "@/lib/api/mock";
-import type { DashboardSummary, HealthMetric } from "@/types";
-import { useProfile } from "@/providers/profile-provider";
+import { ThemedText } from '@/components/themed-text';
+import { ErrorState, LoadingState, ScreenContainer } from '@/components/ui/screen-states';
+import { SectionHeader } from '@/components/ui/section-header';
+import { SurfaceCard } from '@/components/ui/surface-card';
+import { Radius, Spacing } from '@/constants/theme';
+import { usePalette, type ThemePalette } from '@/hooks/use-palette';
+import { getHomeDashboard, type HomeDashboard } from '@/lib/services/home-dashboard';
+import { recordMedicationSkipped, recordMedicationTaken } from '@/lib/services/medications';
+import { canConfirmMedication } from '@/lib/care-action-windows';
+import { useProfile } from '@/providers/profile-provider';
 
-interface DashboardData {
-  summary: DashboardSummary;
-  metrics: HealthMetric[];
-}
-
-async function loadDashboard(): Promise<DashboardData> {
-  return mockDelay({
-    summary: mockDashboard,
-    metrics: mockHealthMetrics,
-  });
-}
+const formatTime = (value: string) => new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
+const formatDateTime = (value: string) => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(value));
+const formatDuration = (minutes: number) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { profile } = useProfile();
-
   const theme = usePalette();
-
   const styles = useMemo(() => makeStyles(theme), [theme]);
-
-  const [data, setData] = useState<DashboardData | null>(null);
-
+  const { profile } = useProfile();
+  const loaded = useRef(false);
+  const [data, setData] = useState<HomeDashboard | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingIn, setCheckingIn] = useState(false);
 
-  const fetchData = useCallback(() => {
-    setLoading(true);
+  const load = useCallback(async () => {
+    if (loaded.current) setRefreshing(true);
+    else setLoading(true);
     setError(null);
-
-    loadDashboard()
-      .then(setData)
-      .catch(() => setError("Could not load your dashboard."))
-      .finally(() => setLoading(false));
+    try {
+      setData(await getHomeDashboard());
+      loaded.current = true;
+    } catch (loadError) {
+      console.error('Could not load the Home dashboard.', loadError);
+      setError('Some health information is temporarily unavailable.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
 
-  if (loading) {
-    return <LoadingState label="Loading your dashboard..." />;
-  }
+  if (loading && !data) return <LoadingState label="Loading your health summary..." />;
+  if (error && !data) return <ErrorState message={error} onRetry={() => void load()} />;
 
-  if (error) {
-    return <ErrorState message={error} onRetry={fetchData} />;
-  }
-
-  if (!data) {
-    return <EmptyState message="Nothing to show yet." />;
-  }
-
-  const { summary, metrics } = data;
-  const hour = new Date().getHours();
-  const dayPart = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  const now = new Date();
+  const currentHour = new Date().getHours();
+  const dayPart = currentHour < 12 ? 'morning' : currentHour < 18 ? 'afternoon' : 'evening';
   const firstName = profile?.full_name.trim().split(/\s+/)[0];
   const greeting = firstName ? `Good ${dayPart}, ${firstName}` : `Good ${dayPart}`;
+  const appointment = data?.appointment;
+  const nextMedication = data?.medications.next;
+  const comingUp = [
+    nextMedication && { key: nextMedication.logId, icon: 'medication' as const, title: `${nextMedication.name} · ${nextMedication.dose}`, detail: `Today at ${formatTime(nextMedication.scheduledFor)}`, startsAt: nextMedication.scheduledFor, route: '/(tabs)/appointments' },
+    appointment && { key: appointment.id, icon: 'event' as const, title: appointment.title, detail: formatDateTime(appointment.startsAt), startsAt: appointment.startsAt, route: `/appointment-details?id=${appointment.id}` },
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item)).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()).slice(0, 4);
+  const medicationCheckIn = async (status: 'taken' | 'skipped') => {
+    if (!nextMedication) return;
+    setCheckingIn(true);
+    try { await (status === 'taken' ? recordMedicationTaken(nextMedication.logId) : recordMedicationSkipped(nextMedication.logId)); await load(); }
+    catch { setError('Could not update the medication reminder.'); }
+    finally { setCheckingIn(false); }
+  };
 
   return (
-    <ScreenContainer contentContainerStyle={styles.content}>
-      {/* Header */}
+    <ScreenContainer
+      style={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load()} tintColor={theme.primary} />}
+    >
       <View style={styles.header}>
-        <View style={styles.headerText}>
+        <View style={styles.grow}>
           <ThemedText style={styles.greeting}>{greeting}</ThemedText>
-
-          <ThemedText style={styles.greetingSub}>
-            How are you feeling today?
-          </ThemedText>
+          <ThemedText style={styles.subtle}>{new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(now)}</ThemedText>
         </View>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Notifications"
-          onPress={() => router.push("/notifications" as never)}
-          hitSlop={8}
-          style={styles.bellButton}
-        >
-          <MaterialIcons
-            name="notifications-none"
-            size={24}
-            color={theme.iconDefault}
-          />
+        <Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')} style={styles.iconButton}>
+          <MaterialIcons name="notifications-none" size={25} color={theme.primary} />
+          {(data?.notifications.unreadCount ?? 0) > 0 ? <View style={styles.badge}><ThemedText style={styles.badgeText}>{Math.min(data!.notifications.unreadCount, 99)}</ThemedText></View> : null}
         </Pressable>
-
       </View>
 
-      {/* Health Summary */}
+      {error ? <View accessibilityRole="alert" style={styles.notice}><ThemedText style={styles.noticeText}>{error} Pull down to try again.</ThemedText></View> : null}
+
+      <SectionHeader label="TODAY AT A GLANCE" />
+      <View style={styles.grid}>
+        <SummaryCard icon="medication" label="Medications" value={data?.medications.progressPercentage === null ? 'No doses due yet' : `${data?.medications.takenDue ?? 0} of ${data?.medications.due ?? 0} due doses taken`} detail={(data?.medications.futureToday ?? 0) > 0 ? `${data!.medications.futureToday} scheduled later today` : 'No medications scheduled later today'} theme={theme} styles={styles} onPress={() => router.push('/(tabs)/appointments')} />
+        <SummaryCard icon="event" label="Next appointment" value={appointment ? formatDateTime(appointment.startsAt) : 'No upcoming appointments'} theme={theme} styles={styles} onPress={() => router.push(appointment ? `/appointment-details?id=${appointment.id}` : '/add-appointment')} />
+        <SummaryCard icon="directions-run" label="Activity" value={data?.activity.dailyGoalMinutes ? `${data.activity.completedMinutesToday} of ${data.activity.dailyGoalMinutes} min` : `${data?.activity.completedMinutesToday ?? 0} min completed`} detail={(data?.activity.recordedStepsToday ?? 0) > 0 ? `${data!.activity.recordedStepsToday.toLocaleString()} recorded steps` : undefined} theme={theme} styles={styles} onPress={() => router.push('/(tabs)/appointments')} />
+        <SummaryCard icon="bedtime" label="Latest sleep" value={data?.sleep ? formatDuration(data.sleep.durationMinutes) : 'No sleep recorded yet'} theme={theme} styles={styles} onPress={() => router.push('/add-sleep')} />
+      </View>
+
       <SurfaceCard>
-        <SectionHeader label="HEALTH SUMMARY" />
-
-        <View style={styles.metricList}>
-          {metrics.map((metric) => (
-            <HealthMetricRow key={metric.id} metric={metric} />
-          ))}
-        </View>
-
+        <SectionHeader label="NEEDS ATTENTION" />
+        {data?.refills.mostUrgent ? <AttentionRow icon="inventory-2" text={`${data.refills.mostUrgent.name} may have ${data.refills.mostUrgent.estimatedDaysRemaining} days remaining`} onPress={() => router.push(`/medication-details?id=${data.refills.mostUrgent!.medicationId}`)} theme={theme} styles={styles} /> : null}
+        {(data?.medications.overduePending ?? 0) > 0 ? <AttentionRow icon="schedule" text={`${data!.medications.overduePending} medication reminder${data!.medications.overduePending === 1 ? '' : 's'} overdue`} onPress={() => router.push('/(tabs)/appointments')} theme={theme} styles={styles} /> : null}
+        {nextMedication && canConfirmMedication(nextMedication.scheduledFor) ? <View style={styles.checkInRow}><Pressable disabled={checkingIn} style={styles.checkInPrimary} onPress={() => void medicationCheckIn('taken')}><ThemedText style={styles.checkInPrimaryText}>Taken</ThemedText></Pressable><Pressable disabled={checkingIn} style={styles.checkInSecondary} onPress={() => void medicationCheckIn('skipped')}><ThemedText style={styles.checkInSecondaryText}>Skip</ThemedText></Pressable></View> : null}
+        {(data?.notifications.unreadCount ?? 0) > 0 ? <AttentionRow icon="notifications" text={`${data!.notifications.unreadCount} unread notification${data!.notifications.unreadCount === 1 ? '' : 's'}`} onPress={() => router.push('/notifications')} theme={theme} styles={styles} /> : null}
+        {!data?.refills.mostUrgent && !data?.medications.overduePending && !data?.notifications.unreadCount ? <ThemedText style={styles.subtle}>Nothing currently requires action in your recorded schedule.</ThemedText> : null}
       </SurfaceCard>
 
-      {/* Upcoming Appointment */}
-      {summary.upcomingAppointment ? (
-        <SurfaceCard>
-          <SectionHeader
-            label="UPCOMING APPOINTMENT"
-            trailing={
-              <MaterialIcons
-                name="calendar-today"
-                size={18}
-                color={theme.iconMuted}
-              />
-            }
-          />
-
-          <View style={styles.apptRow}>
-            <View style={styles.avatarPlaceholder}>
-              <MaterialIcons name="person" size={22} color={theme.avatarIcon} />
-            </View>
-
-            <View style={styles.apptInfo}>
-              <ThemedText type="defaultSemiBold">
-                {summary.upcomingAppointment.title === "Annual Checkup"
-                  ? "Dr. Sarah Ahmed"
-                  : summary.upcomingAppointment.title}
-              </ThemedText>
-
-              <ThemedText style={styles.apptSpecialty}>
-                General Physician
-              </ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.apptTimeRow}>
-            <MaterialIcons name="event" size={16} color={theme.primary} />
-
-            <ThemedText style={styles.apptTimeText}>
-              Tomorrow 10:00 AM
-            </ThemedText>
-
-            <View style={styles.spacer} />
-
-            <MaterialIcons
-              name="chevron-right"
-              size={20}
-              color={theme.iconMuted}
-            />
-          </View>
-        </SurfaceCard>
-      ) : null}
-
-      {/* Quick Actions */}
-      <View>
-        <SectionHeader label="QUICK ACTIONS" />
-
-        <View style={styles.quickActionsRow}>
-          <Pressable
-            style={styles.quickActionCard}
-            accessibilityRole="button"
-            onPress={() => router.push("/(tabs)/symptoms" as never)}
-          >
-            <View style={styles.symptomIcon}>
-              <MaterialIcons
-                name="health-and-safety"
-                size={26}
-                color="#005EA4"
-              />
-            </View>
-
-            <ThemedText style={styles.quickActionLabel}>
-              Track Symptoms
-            </ThemedText>
-
-            <ThemedText style={styles.quickActionSub}>
-              AI-guided health check
-            </ThemedText>
-          </Pressable>
-
-        </View>
+      <SectionHeader label="QUICK ADD" />
+      <View style={styles.actions}>
+        <QuickAction icon="medication" label="Medication" onPress={() => router.push('/add-medication')} theme={theme} styles={styles} />
+        <QuickAction icon="event" label="Appointment" onPress={() => router.push('/add-appointment')} theme={theme} styles={styles} />
+        <QuickAction icon="directions-run" label="Exercise" onPress={() => router.push('/add-activity')} theme={theme} styles={styles} />
+        <QuickAction icon="bedtime" label="Sleep" onPress={() => router.push('/add-sleep')} theme={theme} styles={styles} />
       </View>
 
-      {/* AI Assistant */}
-      <LinearGradient
-        colors={[theme.primary, theme.accent]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.ctaBanner}
-      >
-        <View style={styles.ctaContent}>
-          <View style={styles.aiBadge}>
-            <MaterialIcons name="auto-awesome" size={22} color="#FFFFFF" />
-          </View>
+      <SurfaceCard>
+        <View style={styles.sectionRow}><SectionHeader label="COMING UP" /><Pressable onPress={() => router.push('/(tabs)/appointments')}><ThemedText style={styles.link}>View full schedule</ThemedText></Pressable></View>
+        {comingUp.length ? comingUp.map(item => <AttentionRow key={item.key} icon={item.icon} text={`${item.title} — ${item.detail}`} onPress={() => router.push(item.route as never)} theme={theme} styles={styles} />) : <ThemedText style={styles.subtle}>Nothing else scheduled for today.</ThemedText>}
+      </SurfaceCard>
 
-          <View style={styles.ctaText}>
-            <ThemedText style={styles.ctaTitle}>
-              Need health guidance?
-            </ThemedText>
-
-            <ThemedText style={styles.ctaSubtitle}>
-              Ask AI Care about symptoms, medications, or your health trends.
-            </ThemedText>
-          </View>
-        </View>
-
-        <Pressable
-          style={styles.ctaButton}
-          accessibilityRole="button"
-          accessibilityLabel="Open AI Care Assistant"
-          onPress={() => router.push("/(tabs)/assistant" as never)}
-        >
-          <MaterialIcons name="arrow-forward" size={21} color={theme.primary} />
-        </Pressable>
+      <LinearGradient colors={[theme.primary, theme.secondary]} style={styles.aiBanner}>
+        <View style={styles.grow}><ThemedText style={styles.aiTitle}>Need health guidance?</ThemedText><ThemedText style={styles.aiText}>Open AI Care for informational support.</ThemedText></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open AI Care" onPress={() => router.push('/(tabs)/assistant')} style={styles.aiButton}><MaterialIcons name="arrow-forward" size={21} color={theme.primary} /></Pressable>
       </LinearGradient>
-
-      {/* Safety message */}
-      <View style={styles.safetyCard}>
-        <MaterialIcons name="verified-user" size={22} color="#00714D" />
-
-        <View style={styles.safetyText}>
-          <ThemedText style={styles.safetyTitle}>
-            Your health data matters
-          </ThemedText>
-
-          <ThemedText style={styles.safetyDescription}>
-            AI features provide informational guidance and do not replace
-            professional medical care.
-          </ThemedText>
-        </View>
-      </View>
     </ScreenContainer>
   );
 }
 
-const makeStyles = (theme: ThemePalette) =>
-  StyleSheet.create({
-    content: {
-      padding: Spacing.md,
-      gap: Spacing.md,
-      backgroundColor: theme.screenBg,
-      paddingBottom: 110,
-    },
+type DashboardStyles = ReturnType<typeof makeStyles>;
+function SummaryCard({ icon, label, value, detail, onPress, theme, styles }: { icon: keyof typeof MaterialIcons.glyphMap; label: string; value: string; detail?: string; onPress: () => void; theme: ThemePalette; styles: DashboardStyles }) {
+  return <Pressable accessibilityRole="button" onPress={onPress} style={styles.summaryCard}><MaterialIcons name={icon} size={22} color={theme.primary} /><ThemedText style={styles.cardLabel}>{label}</ThemedText><ThemedText style={styles.cardValue}>{value}</ThemedText>{detail ? <ThemedText style={styles.cardDetail}>{detail}</ThemedText> : null}</Pressable>;
+}
+function QuickAction({ icon, label, onPress, theme, styles }: { icon: keyof typeof MaterialIcons.glyphMap; label: string; onPress: () => void; theme: ThemePalette; styles: DashboardStyles }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Add ${label}`} onPress={onPress} style={styles.quickAction}><MaterialIcons name={icon} size={22} color={theme.primary} /><ThemedText style={styles.quickLabel}>{label}</ThemedText></Pressable>;
+}
+function AttentionRow({ icon, text, onPress, theme, styles }: { icon: keyof typeof MaterialIcons.glyphMap; text: string; onPress: () => void; theme: ThemePalette; styles: DashboardStyles }) {
+  return <Pressable accessibilityRole="button" onPress={onPress} style={styles.attentionRow}><MaterialIcons name={icon} size={20} color={theme.secondary} /><ThemedText style={styles.attentionText}>{text}</ThemedText><MaterialIcons name="chevron-right" size={20} color={theme.iconMuted} /></Pressable>;
+}
 
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.sm,
-    },
-
-    headerText: {
-      flex: 1,
-    },
-
-    greeting: {
-      fontSize: 20,
-      fontWeight: "700",
-      color: theme.accent,
-    },
-
-    greetingSub: {
-      fontSize: 13,
-      color: theme.textSecondary,
-    },
-
-    bellButton: {
-      padding: 4,
-    },
-
-    avatarPlaceholder: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: theme.avatarBg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    metricList: {
-      gap: Spacing.sm,
-    },
-
-    analyticsButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: Spacing.xs,
-      backgroundColor: theme.primary,
-      borderRadius: Radius.pill,
-      paddingVertical: Spacing.sm + 2,
-      marginTop: Spacing.xs,
-    },
-
-    analyticsLabel: {
-      color: theme.white,
-      fontWeight: "600",
-    },
-
-    medRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.sm,
-    },
-
-    medInfo: {
-      flex: 1,
-    },
-
-    medTimeRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-
-    medTime: {
-      fontSize: 12,
-      color: theme.textSecondary,
-    },
-
-    medStatus: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-
-    medStatusText: {
-      fontSize: 12,
-      color: theme.greenIcon,
-      fontWeight: "600",
-    },
-
-    apptRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.sm,
-    },
-
-    apptInfo: {
-      flex: 1,
-    },
-
-    apptSpecialty: {
-      fontSize: 13,
-      color: theme.accent,
-    },
-
-    apptTimeRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.xs,
-      backgroundColor: theme.screenBg,
-      borderRadius: Radius.md,
-      padding: Spacing.sm,
-    },
-
-    apptTimeText: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: theme.textPrimary,
-    },
-
-    spacer: {
-      flex: 1,
-    },
-
-    quickActionsRow: {
-      flexDirection: "row",
-      gap: Spacing.sm,
-      marginTop: Spacing.xs,
-    },
-
-    quickActionCard: {
-      flex: 1,
-      minHeight: 130,
-      backgroundColor: theme.cardBg,
-      borderRadius: Radius.md,
-      borderWidth: 1,
-      borderColor: theme.cardBorder,
-      paddingVertical: Spacing.md,
-      paddingHorizontal: Spacing.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 6,
-    },
-
-    symptomIcon: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
-      backgroundColor: "#E4F0FA",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    aiInsightIcon: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
-      backgroundColor: "#EEE9F8",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    quickActionLabel: {
-      fontSize: 13,
-      fontWeight: "700",
-      textAlign: "center",
-      color: theme.textPrimary,
-    },
-
-    quickActionSub: {
-      fontSize: 10,
-      textAlign: "center",
-      color: theme.textSecondary,
-    },
-
-    ctaBanner: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderRadius: Radius.lg,
-      padding: Spacing.md,
-      gap: Spacing.sm,
-    },
-
-    ctaContent: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-
-    aiBadge: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      backgroundColor: "rgba(255,255,255,0.15)",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    ctaText: {
-      flex: 1,
-    },
-
-    ctaTitle: {
-      color: theme.white,
-      fontWeight: "700",
-      fontSize: 15,
-    },
-
-    ctaSubtitle: {
-      color: theme.white,
-      fontSize: 12,
-      lineHeight: 17,
-      opacity: 0.9,
-    },
-
-    ctaButton: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      backgroundColor: theme.white,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    safetyCard: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 12,
-      backgroundColor: "#ECF8F2",
-      borderWidth: 1,
-      borderColor: "#CBE8DA",
-      borderRadius: Radius.md,
-      padding: Spacing.md,
-    },
-
-    safetyText: {
-      flex: 1,
-    },
-
-    safetyTitle: {
-      color: "#006C49",
-      fontSize: 13,
-      fontWeight: "700",
-    },
-
-    safetyDescription: {
-      color: theme.textSecondary,
-      fontSize: 11,
-      lineHeight: 16,
-      marginTop: 2,
-    },
-  });
+const makeStyles = (theme: ThemePalette) => StyleSheet.create({
+  content: { padding: Spacing.md, gap: Spacing.md, backgroundColor: theme.screenBg, paddingBottom: 110 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }, grow: { flex: 1 },
+  greeting: { fontSize: 22, fontWeight: '700', color: theme.primary }, subtle: { color: theme.textSecondary, fontSize: 13, lineHeight: 19 },
+  iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder },
+  badge: { position: 'absolute', top: 1, right: 0, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: theme.danger, alignItems: 'center', justifyContent: 'center' }, badgeText: { color: theme.white, fontSize: 10, fontWeight: '700' },
+  notice: { backgroundColor: theme.infoBoxBg, borderColor: theme.infoBoxBorder, borderWidth: 1, borderRadius: Radius.md, padding: Spacing.sm }, noticeText: { color: theme.infoBoxText, fontSize: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm }, summaryCard: { width: '48%', minHeight: 130, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: theme.cardBorder, backgroundColor: theme.cardBg, gap: 5 },
+  cardLabel: { color: theme.textSecondary, fontSize: 12 }, cardValue: { color: theme.textPrimary, fontWeight: '700', fontSize: 14 }, cardDetail: { color: theme.textMuted, fontSize: 11 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, link: { color: theme.secondary, fontWeight: '700', fontSize: 12 },
+  attentionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.cardBorder }, attentionText: { flex: 1, color: theme.textPrimary, fontSize: 13 },
+  checkInRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.sm }, checkInPrimary: { flex: 1, minHeight: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.primary }, checkInPrimaryText: { color: theme.white, fontWeight: '700' }, checkInSecondary: { flex: 1, minHeight: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.secondary }, checkInSecondaryText: { color: theme.secondary, fontWeight: '700' },
+  actions: { flexDirection: 'row', gap: Spacing.xs }, quickAction: { flex: 1, minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: Radius.md, backgroundColor: theme.selectedBackground }, quickLabel: { color: theme.primary, fontSize: 11, fontWeight: '700' },
+  aiBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderRadius: Radius.lg, padding: Spacing.md }, aiTitle: { color: theme.white, fontWeight: '700', fontSize: 15 }, aiText: { color: theme.white, opacity: 0.9, fontSize: 12 }, aiButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.white, alignItems: 'center', justifyContent: 'center' },
+});

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ScreenContainer } from "@/components/ui/screen-states";
+import { Brand } from "@/constants/theme";
 
 type Symptom = {
   id: string;
@@ -72,7 +73,7 @@ export default function SymptomsScreen() {
     <ScreenContainer style={styles.screen}>
       <View style={styles.header}>
         <Pressable style={styles.headerButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#00288E" />
+          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Track Symptoms</Text>
@@ -118,7 +119,7 @@ export default function SymptomsScreen() {
                   <MaterialIcons
                     name={symptom.icon}
                     size={24}
-                    color={isSelected ? "#00714D" : "#00288E"}
+                    color={Brand.primary}
                   />
                 </View>
 
@@ -148,13 +149,7 @@ export default function SymptomsScreen() {
                   <View style={styles.checkCircle}>
                     <MaterialIcons name="check" size={16} color="#FFFFFF" />
                   </View>
-                ) : (
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={26}
-                    color="#B8BAC6"
-                  />
-                )}
+                ) : null}
               </Pressable>
             );
           })}
@@ -200,7 +195,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     marginLeft: 1,
-    color: "#00288E",
+    color: Brand.primary,
     fontSize: 24,
     lineHeight: 32,
     fontWeight: "700",
@@ -271,7 +266,7 @@ const styles = StyleSheet.create({
 
   selectedCard: {
     minHeight: 88,
-    backgroundColor: "#6CF8BB",
+    backgroundColor: Brand.backgroundWash,
     borderWidth: 2,
     borderColor: "rgba(0,40,142,0.20)",
     shadowOpacity: 0.1,
@@ -312,7 +307,7 @@ const styles = StyleSheet.create({
   },
 
   selectedSymptomName: {
-    color: "#00714D",
+    color: Brand.primary,
     fontSize: 18,
     lineHeight: 28,
     fontWeight: "700",
@@ -327,7 +322,7 @@ const styles = StyleSheet.create({
   },
 
   selectedSubtitle: {
-    color: "#00714D",
+    color: Brand.primary,
     opacity: 0.8,
   },
 
@@ -335,7 +330,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#00714D",
+    backgroundColor: Brand.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -343,7 +338,7 @@ const styles = StyleSheet.create({
   nextButton: {
     height: 52,
     marginTop: 16,
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primary,
     borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",

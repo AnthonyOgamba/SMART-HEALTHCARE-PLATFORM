@@ -73,7 +73,7 @@ export default function ConsentManagementScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#005EA4" />
+          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Consent Management</Text>
@@ -89,8 +89,8 @@ export default function ConsentManagementScreen() {
       <View style={styles.card}>
         <ConsentRow
           icon="health-and-safety"
-          iconColor="#00714D"
-          iconBackground="#89FA9B"
+          iconColor={Brand.primary}
+          iconBackground={Brand.backgroundWash}
           title="Health Data Sharing"
           description="Allow your health information to be used by approved HealthNexus features and services."
           value={healthDataSharing}
@@ -103,8 +103,8 @@ export default function ConsentManagementScreen() {
 
         <ConsentRow
           icon="psychology"
-          iconColor="#005EA4"
-          iconBackground="#D3E4FF"
+          iconColor={Brand.primary}
+          iconBackground={Brand.backgroundWash}
           title="AI Assistant Usage"
           description="Allow AI Care to analyze the health information you provide to generate personalized guidance and insights."
           value={aiAssistantUsage}
@@ -117,8 +117,8 @@ export default function ConsentManagementScreen() {
 
         <ConsentRow
           icon="notifications-active"
-          iconColor="#087F8C"
-          iconBackground="#79F6F5"
+          iconColor={Brand.secondary}
+          iconBackground={Brand.backgroundWash}
           title="Notification Permissions"
           description="Receive medication reminders, health alerts, wellness reminders, and other important updates."
           value={notificationPermissions}
@@ -135,7 +135,7 @@ export default function ConsentManagementScreen() {
 
       <View style={styles.aiNotice}>
         <View style={styles.aiNoticeIcon}>
-          <MaterialIcons name="auto-awesome" size={22} color="#6246A6" />
+          <MaterialIcons name="auto-awesome" size={22} color={Brand.primary} />
         </View>
 
         <View style={styles.noticeContent}>
@@ -149,7 +149,7 @@ export default function ConsentManagementScreen() {
       </View>
 
       <View style={styles.securityNotice}>
-        <MaterialIcons name="shield" size={21} color="#005EA4" />
+        <MaterialIcons name="shield" size={21} color={Brand.primary} />
 
         <Text style={styles.securityText}>
           Health information is sensitive. Production services should enforce
@@ -181,7 +181,7 @@ export default function ConsentManagementScreen() {
         style={styles.securityButton}
         onPress={() => router.push("/security-center" as never)}
       >
-        <MaterialIcons name="security" size={20} color="#005EA4" />
+        <MaterialIcons name="security" size={20} color={Brand.secondary} />
 
         <Text style={styles.securityButtonText}>Review Security Center</Text>
       </Pressable>
@@ -234,7 +234,7 @@ function ConsentRow({
             onValueChange={onValueChange}
             trackColor={{
               false: "#E6E8EA",
-              true: "#005EA4",
+              true: Brand.primary,
             }}
             thumbColor="#FFFFFF"
           />
@@ -494,13 +494,13 @@ const styles = StyleSheet.create({
   saveButton: {
     height: 56,
     borderRadius: 12,
-    backgroundColor: "#005EA4",
+    backgroundColor: Brand.primaryButtonBackground,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
 
-    shadowColor: "#005EA4",
+    shadowColor: Brand.primary,
     shadowOpacity: 0.2,
     shadowRadius: 7,
     shadowOffset: {
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
   },
 
   securityButtonText: {
-    color: "#005EA4",
+    color: Brand.secondary,
     fontSize: 15,
     fontWeight: "700",
   },

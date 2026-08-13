@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { Palette, type ThemeColors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAppearance } from '@/providers/appearance-provider';
 
 export type ThemePalette = ThemeColors;
 
@@ -17,6 +17,6 @@ export type ThemePalette = ThemeColors;
  *   // defined outside the component so it isn't recreated every render.
  */
 export function usePalette(): ThemePalette {
-  const scheme = useColorScheme() ?? 'light';
-  return useMemo(() => Palette[scheme === 'dark' ? 'dark' : 'light'], [scheme]);
+  const { appearance } = useAppearance();
+  return useMemo(() => Palette[appearance], [appearance]);
 }

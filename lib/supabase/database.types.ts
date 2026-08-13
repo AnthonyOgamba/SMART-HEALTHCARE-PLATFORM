@@ -48,6 +48,8 @@ export interface Database {
           appointment_reminders: boolean;
           critical_alerts: boolean;
           ai_enabled: boolean;
+          daily_activity_goal_minutes: number | null;
+          appearance: 'light' | 'dark';
           created_at: string;
           updated_at: string;
         };
@@ -57,6 +59,8 @@ export interface Database {
           appointment_reminders?: boolean;
           critical_alerts?: boolean;
           ai_enabled?: boolean;
+          daily_activity_goal_minutes?: number | null;
+          appearance?: 'light' | 'dark';
           created_at?: string;
           updated_at?: string;
         };
@@ -65,6 +69,8 @@ export interface Database {
           appointment_reminders?: boolean;
           critical_alerts?: boolean;
           ai_enabled?: boolean;
+          daily_activity_goal_minutes?: number | null;
+          appearance?: 'light' | 'dark';
         };
         Relationships: [];
       };
@@ -81,6 +87,11 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      appointments: { Row: { id:string;user_id:string;title:string;provider_name:string|null;practitioner_type:string|null;appointment_type:string|null;location:string|null;starts_at:string;ends_at:string|null;notes:string|null;status:'scheduled'|'completed'|'cancelled';reminder_at:string|null;reminder_sound:string;attendance_confirmed_at:string|null;created_at:string;updated_at:string }; Insert: never; Update: never; Relationships: [] };
+      activity_logs: { Row: { id:string;user_id:string;activity_type:string;started_at:string;duration_minutes:number|null;distance_km:number|null;steps:number|null;notes:string|null;source:'manual'|'apple_health'|'health_connect';status:'scheduled'|'completed'|'skipped';completed_at:string|null;series_id:string|null;recurrence:'none'|'daily'|'weekly';created_at:string;updated_at:string }; Insert: never; Update: never; Relationships: [] };
+      sleep_logs: { Row: { id:string;user_id:string;sleep_start:string;wake_time:string;quality:number|null;notes:string|null;source:'manual'|'apple_health'|'health_connect';created_at:string;updated_at:string }; Insert: never; Update: never; Relationships: [] };
+      notifications: { Row: { id:string;user_id:string;type:'medication'|'appointment'|'refill'|'activity'|'general'|'critical';title:string;body:string;appointment_id:string|null;medication_log_id:string|null;read_at:string|null;created_at:string }; Insert: never; Update: never; Relationships: [] };
+      medication_refills: { Row: { id:string;medication_id:string;user_id:string;quantity_received:number;refilled_at:string;created_at:string }; Insert: never; Update: never; Relationships: [] };
     };
     Views: Record<string, never>;
     Functions: {
@@ -98,6 +109,22 @@ export interface Database {
       record_medication_status: { Args: { p_log_id: string; p_status: string }; Returns: Json };
       get_medication_history: { Args: { p_from: string; p_to: string; p_medication_id?: string | null }; Returns: Json };
       get_active_medications: { Args: Record<string, never>; Returns: Json };
+      get_appointments: { Args: { p_from:string;p_to:string }; Returns: Database['public']['Tables']['appointments']['Row'][] };
+      get_appointment_details: { Args: { p_id:string }; Returns: Database['public']['Tables']['appointments']['Row'] };
+      save_appointment: { Args: { p_id:string|null;p_title:string;p_provider_name:string|null;p_practitioner_type:string|null;p_appointment_type:string|null;p_location:string|null;p_starts_at:string;p_ends_at:string|null;p_notes:string|null;p_reminder_at:string|null;p_reminder_sound:string }; Returns: Database['public']['Tables']['appointments']['Row'] };
+      set_appointment_status: { Args: { p_id:string;p_status:string }; Returns: Database['public']['Tables']['appointments']['Row'] };
+      confirm_appointment_attendance: { Args: { p_id:string }; Returns: Database['public']['Tables']['appointments']['Row'] };
+      create_activity: { Args: { p_activity_type:string;p_started_at:string;p_duration_minutes:number|null;p_distance_km:number|null;p_steps:number|null;p_notes:string|null }; Returns: Database['public']['Tables']['activity_logs']['Row'] };
+      save_activity: { Args: { p_id:string|null;p_activity_type:string;p_started_at:string;p_duration_minutes:number|null;p_distance_km:number|null;p_steps:number|null;p_notes:string|null;p_recurrence:string;p_recurrence_until:string|null }; Returns: Database['public']['Tables']['activity_logs']['Row'] };
+      set_activity_status: { Args: { p_id:string;p_status:string }; Returns: Database['public']['Tables']['activity_logs']['Row'] };
+      get_activity_details: { Args: { p_id:string }; Returns: Database['public']['Tables']['activity_logs']['Row'] };
+      get_activity_adherence: { Args: { p_from:string;p_to:string }; Returns:Json };
+      get_home_dashboard: { Args: { p_day_start:string;p_day_end:string;p_now:string }; Returns:Json };
+      create_sleep_log: { Args: { p_sleep_start:string;p_wake_time:string;p_quality:number|null;p_notes:string|null }; Returns: Database['public']['Tables']['sleep_logs']['Row'] };
+      mark_notification_read: { Args: { p_id:string }; Returns: Database['public']['Tables']['notifications']['Row'] };
+      mark_all_notifications_read: { Args: Record<string,never>; Returns:number };
+      mark_medication_refilled: { Args: { p_medication_id:string;p_quantity:number;p_refilled_at:string }; Returns:Json };
+      configure_medication_supply: { Args: { p_medication_id:string;p_supply_quantity:number|null;p_units_per_dose:number|null;p_supply_unit:string|null;p_refill_warning_days:number|null }; Returns:Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

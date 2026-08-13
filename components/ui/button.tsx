@@ -21,18 +21,17 @@ export type ButtonProps = Omit<PressableProps, 'children'> & {
  */
 export function Button({ label, variant = 'primary', loading, icon, disabled, style, ...rest }: ButtonProps) {
   const theme = usePalette();
-  const tint = theme.primary;
   const isDisabled = disabled || loading;
 
   const variantStyle =
     variant === 'primary'
-      ? { backgroundColor: tint, borderColor: tint }
+      ? { backgroundColor: theme.primaryButtonBackground, borderColor: theme.primaryButtonBackground }
       : variant === 'danger'
       ? { backgroundColor: 'transparent', borderColor: theme.danger }
-      : { backgroundColor: 'transparent', borderColor: tint };
+      : { backgroundColor: 'transparent', borderColor: theme.secondary };
 
   const textColor =
-    variant === 'primary' ? theme.white : variant === 'danger' ? theme.danger : tint;
+    variant === 'primary' ? theme.white : variant === 'danger' ? theme.danger : theme.secondary;
 
   return (
     <Pressable
@@ -42,7 +41,7 @@ export function Button({ label, variant = 'primary', loading, icon, disabled, st
       style={({ pressed }) => [
         styles.base,
         variantStyle,
-        isDisabled && styles.disabled,
+        isDisabled && { backgroundColor: theme.disabledBackground, borderColor: theme.disabledBackground },
         pressed && !isDisabled && styles.pressed,
         style as object,
       ]}
@@ -51,7 +50,7 @@ export function Button({ label, variant = 'primary', loading, icon, disabled, st
         <ActivityIndicator color={textColor} />
       ) : (
         <View style={styles.content}>
-          <ThemedText style={[styles.label, { color: textColor }]}>{label}</ThemedText>
+          <ThemedText style={[styles.label, { color: isDisabled ? theme.disabledText : textColor }]}>{label}</ThemedText>
           {icon ? <MaterialIcons name={icon} size={18} color={textColor} /> : null}
         </View>
       )}
@@ -80,8 +79,5 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
-  },
-  disabled: {
-    opacity: 0.5,
   },
 });

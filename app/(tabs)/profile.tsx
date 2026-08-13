@@ -5,6 +5,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { DatePickerField } from '@/components/ui/date-picker-field';
 import { IconBadge } from '@/components/ui/icon-badge';
 import { InfoField } from '@/components/ui/info-field';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { signOut } from '@/lib/services/auth';
 import type { Profile } from '@/lib/services/profile';
 import { useAuth } from '@/providers/auth-provider';
 import { useProfile } from '@/providers/profile-provider';
+import { useAppearance, type Appearance } from '@/providers/appearance-provider';
 
 type EditableProfile = Pick<
   Profile,
@@ -31,6 +33,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { profile, loading, error, refreshProfile, saveProfile } = useProfile();
+  const { appearance, setAppearance } = useAppearance();
   const theme = usePalette();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const [draft, setDraft] = useState<EditableProfile | null>(null);
@@ -96,7 +99,7 @@ export default function ProfileScreen() {
         <SurfaceCard>
           <Input label="Full Name" icon="person-outline" value={draft.full_name} onChangeText={setField('full_name')} />
           <Input label="Phone" icon="call" value={draft.phone ?? ''} onChangeText={setField('phone')} keyboardType="phone-pad" />
-          <Input label="Date of Birth" icon="event" placeholder="YYYY-MM-DD" value={draft.date_of_birth ?? ''} onChangeText={setField('date_of_birth')} />
+          <DatePickerField label="Date of Birth" value={draft.date_of_birth ?? ''} onChange={setField('date_of_birth')} optional />
           <Input label="Emergency Contact" icon="shield" value={draft.emergency_contact_name ?? ''} onChangeText={setField('emergency_contact_name')} />
           <Input label="Relationship" icon="people" value={draft.emergency_contact_relationship ?? ''} onChangeText={setField('emergency_contact_relationship')} />
           <Input label="Emergency Phone" icon="call" value={draft.emergency_contact_phone ?? ''} onChangeText={setField('emergency_contact_phone')} keyboardType="phone-pad" />
@@ -128,6 +131,24 @@ export default function ProfileScreen() {
         </>
       )}
 
+      <SurfaceCard>
+        <View style={styles.cardHeader}>
+          <IconBadge icon="palette" color={theme.blueIcon} backgroundColor={theme.blueTint} size={30} />
+          <View><ThemedText type="defaultSemiBold">Appearance</ThemedText><ThemedText style={styles.email}>Applied across the whole app</ThemedText></View>
+        </View>
+        <View style={styles.appearanceRow}>
+          {(['light', 'dark'] as Appearance[]).map(value => (
+            <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: appearance === value }} style={[styles.appearanceOption, appearance === value && styles.appearanceSelected]} onPress={async () => {
+              try { await setAppearance(value); }
+              catch { Alert.alert('Could Not Save Appearance', 'Please try again.'); }
+            }}>
+              <MaterialIcons name={value === 'light' ? 'light-mode' : 'dark-mode'} size={20} color={appearance === value ? theme.white : theme.primary} />
+              <ThemedText style={[styles.appearanceText, appearance === value && { color: theme.white }]}>{value === 'light' ? 'Light' : 'Dark'}</ThemedText>
+            </Pressable>
+          ))}
+        </View>
+      </SurfaceCard>
+
       <Button
         label="Logout"
         icon="logout"
@@ -156,4 +177,8 @@ const makeStyles = (theme: ThemePalette) => StyleSheet.create({
   email: { fontSize: 13, color: theme.textSecondary },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
   version: { textAlign: 'center', fontSize: 12, color: theme.textMuted, marginTop: Spacing.sm },
+  appearanceRow: { flexDirection: 'row', gap: Spacing.sm },
+  appearanceOption: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: theme.inputBorder, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  appearanceSelected: { backgroundColor: theme.primary, borderColor: theme.primary },
+  appearanceText: { color: theme.primary, fontWeight: '700' },
 });

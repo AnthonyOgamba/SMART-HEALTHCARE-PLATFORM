@@ -6,7 +6,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf
 const migration = read('supabase/migrations/202608130001_medication_backend.sql');
 const service = read('lib/services/medications.ts');
 const reminders = read('lib/services/local-medication-reminders.ts');
-const list = read('app/(tabs)/medications.tsx');
+const schedule = read('app/(tabs)/appointments.tsx');
 const form = read('app/add-medication.tsx');
 const details = read('app/medication-details.tsx');
 const history = read('app/medication-history.tsx');
@@ -30,9 +30,9 @@ test('unauthenticated roles have no direct table or RPC access',()=>{assert.matc
 test('missed doses use deterministic two-hour on-demand refresh',()=>{assert.match(migration,/interval '2 hours'/);assert.match(migration,/refresh_missed_medication_logs/);assert.match(migration,/perform public\.refresh_missed_medication_logs\(\)/);});
 test('local reminders request permission, schedule, persist and cancel',()=>{assert.match(reminders,/requestPermissionsAsync/);assert.match(reminders,/scheduleNotificationAsync/);assert.match(reminders,/AsyncStorage/);assert.match(reminders,/cancelScheduledNotificationAsync/);});
 test('permission denial does not prevent database save',()=>{assert.ok(form.indexOf("const result=id?await updateMedication") < form.lastIndexOf('scheduleMedicationReminders'));assert.match(form,/Medication Saved/);});
-test('empty medication states are present',()=>{assert.match(list,/No medications are scheduled for today/);assert.match(history,/No medication history for this period/);});
+test('empty medication states are present',()=>{assert.match(schedule,/No health activities scheduled for this day/);assert.match(history,/No medication history for this period/);});
 test('all public capabilities have frontend paths',()=>{
- const audit=[['create_medication',form],['update_medication',form],['archive_medication',details],['get_medications_for_date',list],['get_medication_details',details],['record_medication_status',list],['get_medication_history',history]];
+ const audit=[['create_medication',form],['update_medication',form],['archive_medication',details],['get_medications_for_date',schedule],['get_medication_details',details],['record_medication_status',service],['get_medication_history',history]];
  for(const [rpc,screen] of audit){assert.match(migration,new RegExp(rpc));assert.ok(screen.length>0);}
 });
 test('User A cannot select User B medication',()=>{assert.match(migration,/medications_select_own[\s\S]*auth\.uid\(\)/);});

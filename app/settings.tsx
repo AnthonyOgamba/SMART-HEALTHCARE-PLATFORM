@@ -1,13 +1,15 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { ErrorState, LoadingState, ScreenContainer } from "@/components/ui/screen-states";
 import { getUserSettings, updateUserSettings, type UserSettingsUpdate } from "@/lib/services/settings";
 import { Brand, PageTypography } from "@/constants/theme";
 import { reconcileMedicationReminders } from "@/lib/services/local-medication-reminders";
 import { getActiveMedications } from "@/lib/services/medications";
+import { getUpcomingAppointments } from "@/lib/services/appointments";
+import { reconcileAppointmentReminders } from "@/lib/services/local-appointment-reminders";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -19,8 +21,8 @@ export default function SettingsScreen() {
   const [criticalAlerts, setCriticalAlerts] = useState(true);
 
   const [aiInsights, setAiInsights] = useState(true);
-
-  const [biometricLock, setBiometricLock] = useState(false);
+  const [activityGoal, setActivityGoal] = useState("");
+  const [savingGoal, setSavingGoal] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,7 @@ export default function SettingsScreen() {
         setAppointmentReminders(settings.appointment_reminders);
         setCriticalAlerts(settings.critical_alerts);
         setAiInsights(settings.ai_enabled);
+        setActivityGoal(settings.daily_activity_goal_minutes?.toString() ?? "");
       })
       .catch((loadError) =>
         setError(loadError instanceof Error ? loadError.message : "Could not load settings."),
@@ -60,6 +63,13 @@ export default function SettingsScreen() {
           Alert.alert("Reminders Disabled", "Medication reminder permission is not enabled on this device.");
         }
       }
+      if (values.appointment_reminders !== undefined) {
+        const appointments = values.appointment_reminders ? await getUpcomingAppointments() : [];
+        const granted = await reconcileAppointmentReminders(appointments, values.appointment_reminders);
+        if (values.appointment_reminders && !granted) {
+          Alert.alert("Reminders Disabled", "Appointment reminder permission is not enabled on this device.");
+        }
+      }
     } catch (saveError) {
       apply(previousValue);
       Alert.alert(
@@ -69,28 +79,13 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleChangePassword = () => {
-    Alert.alert(
-      "Change Password",
-      "Password changes will be connected to the authentication service.",
-    );
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This will permanently remove your account and associated health information.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-        },
-      ],
-    );
+  const saveActivityGoal = async () => {
+    const value = activityGoal.trim() === '' ? null : Number(activityGoal);
+    if (value !== null && (!Number.isInteger(value) || value <= 0)) { Alert.alert('Invalid Goal', 'Enter a positive whole number of minutes, or leave it blank.'); return; }
+    setSavingGoal(true);
+    try { await updateUserSettings({ daily_activity_goal_minutes: value }); Alert.alert('Goal Saved', value === null ? 'Your activity goal was cleared.' : 'Your daily activity goal was updated.'); }
+    catch { Alert.alert('Could Not Save Goal', 'Please try again.'); }
+    finally { setSavingGoal(false); }
   };
 
   if (loading) return <LoadingState label="Loading settings..." />;
@@ -100,7 +95,7 @@ export default function SettingsScreen() {
     <ScreenContainer contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#005EA4" />
+          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Settings</Text>
@@ -166,19 +161,21 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <Text style={styles.sectionLabel}>SECURITY</Text>
-
+      <Text style={styles.sectionLabel}>ACTIVITY</Text>
       <View style={styles.card}>
-        <ToggleRow
-          icon="fingerprint"
-          title="Biometric App Lock"
-          description="Use supported device authentication to protect access to health information."
-          value={biometricLock}
-          onValueChange={setBiometricLock}
-        />
+        <View style={styles.goalRow}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowTitle}>Daily activity goal</Text>
+            <Text style={styles.rowDescription}>Choose your own optional daily activity-minute goal.</Text>
+          </View>
+          <TextInput accessibilityLabel="Daily activity goal minutes" keyboardType="number-pad" placeholder="None" value={activityGoal} onChangeText={setActivityGoal} style={styles.goalInput}/>
+          <Text style={styles.goalUnit}>minutes</Text>
+        </View>
+        <Pressable accessibilityRole="button" disabled={savingGoal} style={[styles.goalButton, savingGoal && { opacity: 0.6 }]} onPress={saveActivityGoal}><Text style={styles.goalButtonText}>{savingGoal ? 'Saving...' : 'Save Activity Goal'}</Text></Pressable>
+      </View>
 
-        <View style={styles.divider} />
-
+      <Text style={styles.sectionLabel}>SECURITY</Text>
+      <View style={styles.card}>
         <NavigationRow
           icon="security"
           title="Security Center"
@@ -192,7 +189,7 @@ export default function SettingsScreen() {
           icon="lock"
           title="Change Password"
           description="Update your account credentials."
-          onPress={handleChangePassword}
+          onPress={() => router.push('/change-password' as never)}
         />
       </View>
 
@@ -202,7 +199,7 @@ export default function SettingsScreen() {
         <NavigationRow
           icon="fact-check"
           title="Consent Management"
-          description="Control AI, health-data, wearable, and notification permissions."
+          description="Control AI, health-data, and notification permissions."
           onPress={() => router.push("/consent-management" as never)}
         />
 
@@ -216,8 +213,15 @@ export default function SettingsScreen() {
         />
       </View>
 
+      <Text style={styles.sectionLabel}>APP</Text>
+      <View style={styles.card}>
+        <NavigationRow icon="notifications" title="Notifications" description="Review your notification feed." onPress={() => router.push('/notifications' as never)} />
+        <View style={styles.divider} />
+        <NavigationRow icon="palette" title="Appearance" description="Choose Light or Dark mode from Profile." onPress={() => router.replace('/(tabs)/profile' as never)} />
+      </View>
+
       <View style={styles.securityNotice}>
-        <MaterialIcons name="shield" size={22} color="#005EA4" />
+        <MaterialIcons name="shield" size={22} color={Brand.primary} />
 
         <View style={styles.noticeContent}>
           <Text style={styles.noticeTitle}>Health Information Security</Text>
@@ -229,12 +233,6 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </View>
-
-      <Pressable style={styles.deleteButton} onPress={handleDeleteAccount}>
-        <MaterialIcons name="delete-outline" size={20} color="#BA1A1A" />
-
-        <Text style={styles.deleteText}>Delete Account</Text>
-      </Pressable>
 
       <Text style={styles.version}>HealthNexus 1.0</Text>
     </ScreenContainer>
@@ -257,7 +255,7 @@ function ToggleRow({
   return (
     <View style={styles.row}>
       <View style={styles.icon}>
-        <MaterialIcons name={icon} size={22} color="#005EA4" />
+        <MaterialIcons name={icon} size={22} color={Brand.primary} />
       </View>
 
       <View style={styles.rowContent}>
@@ -271,7 +269,7 @@ function ToggleRow({
         onValueChange={onValueChange}
         trackColor={{
           false: "#D7DBDF",
-          true: "#005EA4",
+          true: Brand.primary,
         }}
         thumbColor="#FFFFFF"
       />
@@ -293,7 +291,7 @@ function NavigationRow({
   return (
     <Pressable style={styles.row} onPress={onPress}>
       <View style={styles.icon}>
-        <MaterialIcons name={icon} size={22} color="#005EA4" />
+        <MaterialIcons name={icon} size={22} color={Brand.primary} />
       </View>
 
       <View style={styles.rowContent}>
@@ -360,7 +358,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#E4F0FA",
+    backgroundColor: Brand.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -403,7 +401,7 @@ const styles = StyleSheet.create({
   },
 
   noticeTitle: {
-    color: "#005EA4",
+    color: Brand.primary,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -438,4 +436,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
   },
+  goalRow:{minHeight:82,flexDirection:"row",alignItems:"center",gap:8,paddingVertical:13},
+  goalInput:{width:68,height:42,borderWidth:1,borderColor:Brand.inputBorder,borderRadius:9,paddingHorizontal:10,backgroundColor:"#FFFFFF",textAlign:"center"},
+  goalUnit:{fontSize:12,color:Brand.textSecondary},
+  goalButton:{marginBottom:15,height:44,borderRadius:10,backgroundColor:Brand.primary,alignItems:"center",justifyContent:"center"},
+  goalButtonText:{color:"#FFFFFF",fontWeight:"700"},
 });

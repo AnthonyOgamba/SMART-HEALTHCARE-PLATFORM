@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test:phase1": "node --test tests/phase1-foundation.test.mjs",
     "test:phase2": "node --test tests/phase2-medications.test.mjs"
+    ,"test:phase3": "node --test tests/phase3-care-schedule.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

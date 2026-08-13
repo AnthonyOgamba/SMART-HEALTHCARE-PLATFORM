@@ -1,5 +1,4 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -31,7 +30,6 @@ const initialMessages: Message[] = [
 ];
 
 export default function AssistantScreen() {
-  const router = useRouter();
   const theme = usePalette();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
@@ -110,13 +108,6 @@ export default function AssistantScreen() {
   return (
     <ScreenContainer style={styles.content}>
       <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => router.replace("/(tabs)/home")}
-        >
-          <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
-        </Pressable>
-
         <Text style={styles.headerTitle}>AI Care Assistant</Text>
       </View>
 
@@ -143,7 +134,7 @@ export default function AssistantScreen() {
           onPress={() => setInput("Help me understand my medications")}
         >
           <View style={styles.featureIconGreen}>
-            <MaterialIcons name="medication" size={22} color="#00714D" />
+            <MaterialIcons name="medication" size={22} color={theme.accent} />
           </View>
 
           <Text style={styles.featureTitle}>Medication Help</Text>
@@ -154,7 +145,7 @@ export default function AssistantScreen() {
           onPress={() => setInput("Explain my recent health trends")}
         >
           <View style={styles.featureIconPurple}>
-            <MaterialIcons name="insights" size={22} color="#6246A6" />
+            <MaterialIcons name="insights" size={22} color={theme.accent} />
           </View>
 
           <Text style={styles.featureTitle}>Health Insights</Text>
@@ -362,7 +353,7 @@ const makeStyles = (theme: ThemePalette) => StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#DFF5EC",
+    backgroundColor: theme.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -371,7 +362,7 @@ const makeStyles = (theme: ThemePalette) => StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#EEE9F8",
+    backgroundColor: theme.backgroundWash,
     alignItems: "center",
     justifyContent: "center",
   },

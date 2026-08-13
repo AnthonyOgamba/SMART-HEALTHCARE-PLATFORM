@@ -34,7 +34,7 @@ export default function SymptomDetailsScreen() {
     <View style={styles.screen}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#00288E" />
+          <MaterialIcons name="arrow-back" size={24} color={Brand.primary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Symptom Details</Text>
@@ -97,7 +97,7 @@ export default function SymptomDetailsScreen() {
 
           <View style={styles.adjustRow}>
             <Pressable style={styles.adjustButton} onPress={decreaseSeverity}>
-              <MaterialIcons name="remove" size={22} color="#00288E" />
+              <MaterialIcons name="remove" size={22} color={Brand.primary} />
             </Pressable>
 
             <View style={styles.severitySummary}>
@@ -109,7 +109,7 @@ export default function SymptomDetailsScreen() {
             </View>
 
             <Pressable style={styles.adjustButton} onPress={increaseSeverity}>
-              <MaterialIcons name="add" size={22} color="#00288E" />
+              <MaterialIcons name="add" size={22} color={Brand.primary} />
             </Pressable>
           </View>
 
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: Brand.accent,
+    color: Brand.primary,
     ...PageTypography.title,
   },
 
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: "row",
     gap: 16,
-    backgroundColor: "#046A58",
+    backgroundColor: Brand.primary,
     shadowColor: "#000",
     shadowOpacity: 0.12,
     shadowRadius: 8,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     minWidth: 48,
     height: 42,
     borderRadius: 999,
-    backgroundColor: "#1E40AF",
+    backgroundColor: Brand.primary,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 14,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
 
   sliderProgress: {
     height: 8,
-    backgroundColor: "#5A7BCB",
+    backgroundColor: Brand.primary,
     borderRadius: 8,
   },
 
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primary,
     borderWidth: 4,
     borderColor: "#DDE5F5",
   },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#087F8C",
+    backgroundColor: Brand.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   },
 
   durationOptionSelected: {
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primary,
   },
 
   durationText: {
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   nextButton: {
     height: 52,
     borderRadius: 999,
-    backgroundColor: "#00288E",
+    backgroundColor: Brand.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
