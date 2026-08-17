@@ -7,6 +7,7 @@ import { AuthLayout } from '@/components/ui/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TermsAgreement } from '@/components/ui/terms-agreement';
+import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { signUp } from '@/lib/services/auth';
 
@@ -24,6 +25,7 @@ interface FormErrors {
   phone?: string;
   password?: string;
   confirmPassword?: string;
+  form?: string;
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,6 +51,8 @@ function validate(form: FormState): FormErrors {
     errors.password = 'Password is required.';
   } else if (form.password.length < 8) {
     errors.password = 'Password must be at least 8 characters.';
+  } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(form.password)) {
+    errors.password = 'Use at least one uppercase letter, lowercase letter, number, and special character.';
   }
 
   if (form.confirmPassword !== form.password) {
@@ -56,6 +60,16 @@ function validate(form: FormState): FormErrors {
   }
 
   return errors;
+}
+
+function signupError(error: unknown): FormErrors {
+  const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+  if (/password|character|uppercase|lowercase|digit|number|symbol/i.test(message)) {
+    return { password: 'Use at least 8 characters with an uppercase letter, lowercase letter, number, and special character.' };
+  }
+  if (/email|already registered|already exists|user already/i.test(message)) return { email: message };
+  if (/phone/i.test(message)) return { phone: message };
+  return { form: message };
 }
 
 export default function SignupScreen() {
@@ -105,9 +119,7 @@ export default function SignupScreen() {
         );
       }
     } catch (error) {
-      setErrors({
-        email: error instanceof Error ? error.message : 'Something went wrong. Please try again.',
-      });
+      setErrors(signupError(error));
     } finally {
       setSubmitting(false);
     }
@@ -178,6 +190,7 @@ export default function SignupScreen() {
       />
 
       <View style={{ marginTop: Spacing.sm }}>
+        {errors.form ? <ThemedText style={{ color: '#C62828', marginBottom: Spacing.sm }} accessibilityLiveRegion="polite">{errors.form}</ThemedText> : null}
         <TermsAgreement
           accepted={termsAccepted}
           onAcceptedChange={setTermsAccepted}
