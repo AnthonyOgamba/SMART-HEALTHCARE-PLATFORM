@@ -51,6 +51,8 @@ export default function AssistantScreen() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string>();
+  const [loadedUserId, setLoadedUserId] = useState<string>();
+  const accountReady = Boolean(user?.id && loadedUserId === user.id);
 
   const scrollToLatest = useCallback(() => {
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
@@ -58,17 +60,20 @@ export default function AssistantScreen() {
 
   useEffect(() => {
     let active = true;
+    const requestedUserId = user?.id;
     setConversationId(undefined);
     setMessages([]);
     setErrorMessage(undefined);
     setHistoryLoading(true);
+    setLoadedUserId(requestedUserId);
     (async () => {
       try {
+        if (!requestedUserId) return;
         const recent = await getConversations();
         const latest = recent[0];
-        if (!active || !latest) return;
+        if (!active || user?.id !== requestedUserId || !latest) return;
         const history = await getConversationMessages(latest.id);
-        if (!active) return;
+        if (!active || user?.id !== requestedUserId) return;
         setConversationId(latest.id);
         setMessages(history);
       } catch (error) {
@@ -105,7 +110,7 @@ export default function AssistantScreen() {
 
   const ask = async (text = input) => {
     const clean = text.trim();
-    if (!clean || loading) return;
+    if (!clean || loading || !accountReady) return;
     const pending: Message = { id: `user-${Date.now()}`, role: 'user', content: clean };
     setMessages((current) => [...current, pending]);
     setInput('');
@@ -181,12 +186,12 @@ export default function AssistantScreen() {
           ref={listRef}
           style={styles.messageList}
           contentContainerStyle={[styles.messageContent, messages.length === 0 && styles.emptyContent]}
-          data={messages}
+          data={accountReady ? messages : []}
           keyExtractor={(item) => item.id}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={scrollToLatest}
-          ListEmptyComponent={historyLoading ? <ActivityIndicator color={theme.primary} /> : emptyChat}
+          ListEmptyComponent={historyLoading || !accountReady ? <ActivityIndicator color={theme.primary} /> : emptyChat}
           renderItem={({ item }) => (
             <View style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.aiBubble]}>
               <ThemedText style={item.role === 'user' ? styles.userText : styles.aiText}>{item.role === 'assistant' ? cleanAiText(item.content) : item.content}</ThemedText>

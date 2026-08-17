@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { LoadingState } from '@/components/ui/screen-states';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
@@ -49,7 +50,7 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}><AuthProvider>
       <AppearanceProvider>
         <ProfileProvider>
           <MedicationReminderProvider>
@@ -57,6 +58,6 @@ export default function RootLayout() {
           </MedicationReminderProvider>
         </ProfileProvider>
       </AppearanceProvider>
-    </AuthProvider>
+    </AuthProvider></GestureHandlerRootView>
   );
 }

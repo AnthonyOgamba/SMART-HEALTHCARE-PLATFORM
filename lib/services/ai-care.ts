@@ -39,17 +39,26 @@ export const sendAiMessage = async (message: string, conversationId?: string, in
   const activity_context = activity?.steps === null || activity?.steps === undefined ? undefined : { steps: activity.steps, source: activity.source };
   return request<{ conversation_id: string; message: AiMessage; intent: string }>('/v1/chat', { message, conversation_id: conversationId, intent, timezone_offset_minutes: new Date().getTimezoneOffset(), activity_context });
 };
-export const summarizeMyDay = () => request<{ summary: string }>('/v1/day', {});
+export const summarizeMyDay = () => request<{ summary: string }>('/v1/day', { timezone_offset_minutes: new Date().getTimezoneOffset() });
 export const prepareForAppointment = (id: string) => request<{ summary: string }>('/v1/appointment-prep', { id });
 export const summarizeHealthHistory = (from: string, to: string) => request<{ summary: string }>('/v1/health-history', { from, to });
 export const assessSymptoms = (input: { symptoms: string[]; severity: 'mild' | 'moderate' | 'severe'; duration: string; associated_symptoms: string[]; context?: string }) => request<any>('/v1/symptoms', input);
 
 export async function getConversations() {
-  const { data, error } = await supabase.from('conversations').select('*').is('archived_at', null).order('updated_at', { ascending: false }).limit(20);
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!authData.user) throw new AiCareError('Log in to view conversations.', 'AUTH_REQUIRED', 401);
+  const { data, error } = await supabase.from('conversations').select('*').eq('user_id', authData.user.id).is('archived_at', null).order('updated_at', { ascending: false }).limit(20);
   if (error) throw error;
   return data;
 }
 export async function getConversationMessages(conversationId: string) {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!authData.user) throw new AiCareError('Log in to view conversations.', 'AUTH_REQUIRED', 401);
+  const { data: ownedConversation, error: ownerError } = await supabase.from('conversations').select('id').eq('id', conversationId).eq('user_id', authData.user.id).maybeSingle();
+  if (ownerError) throw ownerError;
+  if (!ownedConversation) throw new AiCareError('Conversation not found for this account.', 'CONVERSATION_NOT_FOUND', 404);
   const { data, error } = await supabase.from('conversation_messages').select('id,role,content,created_at').eq('conversation_id', conversationId).order('created_at');
   if (error) throw error;
   return (data ?? []).filter((item): item is ConversationMessage => item.role === 'user' || item.role === 'assistant');
