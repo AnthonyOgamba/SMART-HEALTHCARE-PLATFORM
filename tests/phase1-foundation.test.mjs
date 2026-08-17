@@ -84,6 +84,13 @@ test('Sign Up requires Terms acceptance while returning-user login does not', ()
   assert.match(signupScreen, /disabled=\{!termsAccepted\}/);
 });
 
+test('Sign Up places password and general server errors in the correct UI locations', () => {
+  assert.match(signupScreen, /function signupError/);
+  assert.match(signupScreen, /return \{ password:/);
+  assert.match(signupScreen, /return \{ form: message \}/);
+  assert.match(signupScreen, /errors\.form/);
+});
+
 test('shared profile state reads and persists the authenticated profile', () => {
   assert.match(profileProvider, /getProfile\(\)/);
   assert.match(profileProvider, /updateProfile\(values\)/);
